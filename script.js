@@ -553,26 +553,43 @@ class Book {
     /**@type Spread[]*/
 
     this.spreads = spreads
+    this.offsets = []
   }
 
-  saddle_pages(num = 1) {
+  saddle_pages() {
     // get pages
     let pages = this.pages()
+    //let pages = [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10, 11], [12, 13], [14, 15], [16, 17]]
     if (!Array.isArray(pages)) return
 
     let last = pages.length - 1
     let pair = (i) => pages[last - i]
+    let pairskiplast = (i) => pages[last - i - 1]
 
     let middle = Math.ceil(last / 2)
 
     // switch each recto with pair spread recto till middle
     for (let i = 0; i < middle; i++) {
-      let f_recto = pages[i][1]
-      let p_recto = pair(i)[1]
+      let f_verso = pages[i][0]
+      let p_verso = pair(i)[0]
 
-      pages[i][1] = p_recto
-      pair(i)[1] = f_recto
+      pages[i][0] = p_verso
+      pair(i)[0] = f_verso
     }
+
+    console.log("pages", [...pages])
+
+    let pairedup = []
+
+    for (let i = 0; i < middle; i++) {
+      pairedup.push(pages[i])
+      pairedup.push(pairskiplast(i))
+    }
+
+    console.log("paired up", pairedup)
+
+    // pair pairs
+
 
     // pair each pair and flatten
     let pairs = []
@@ -583,6 +600,42 @@ class Book {
     }
 
     return pairs
+  }
+
+  // Will take sheet number, find pages in the sheet and mark it offset
+  mark_sheet_offset(index) {
+    console.log('recieved sheet', index)
+    if (!this.validate_spread(index)) return
+
+    let spreads = this.saddle_pages()
+    let sheet = spreads[index]
+    const isOdd = num => num % 2 == 1;
+    let pair_index = isOdd(index) ? index - 1 : index + 1
+    let pair = spreads[pair_index]
+    console.log('saddle', spreads)
+    console.log('pair', index, pair_index)
+
+    sheet.forEach((e) => {
+      console.log('page', e)
+      if (this.offsets.findIndex(f => f == e) == -1) { this.offsets.push(e) }
+    })
+
+    pair.forEach((e) => {
+      console.log('page', e)
+      if (this.offsets.findIndex(f => f == e) == -1) { this.offsets.push(e) }
+    })
+  }
+
+  // Will take page number and convert to sheet then mark it.
+  mark_page_offset(page) {
+    let spread = this.saddle_pages()
+    let index = -1
+
+    spread.forEach((e, i) => {
+      e.forEach(pg => pg == page ? index = i : null)
+    })
+
+    this.mark_sheet_offset(index)
   }
 
   page_to_spread(num) {
@@ -691,13 +744,15 @@ class Book {
   }
 
   draw_verso(p) {
+    let page = this.current_spread * 2 - 1
     let img = this.verso_image(p, this.current_spread)
-    this.draw_img(p, img)
+    this.draw_img(p, img, 0, this.offsets.includes(page) ? -200 : 0)
   }
 
   draw_recto(p) {
+    let page = this.current_spread * 2
     let img = this.recto_image(p, this.current_spread)
-    this.draw_img(p, img, img.width)
+    this.draw_img(p, img, img.width, this.offsets.includes(page) ? -200 : 0)
   }
 
   draw_page_set(p, num1, num2) {
@@ -807,29 +862,8 @@ class Paper {
 
 /**@type {p5}*/
 let p
-let oracle, gapsans
-
-
-function draw(p) {
-}
-
-setTimeout(() => {
-  let el = document.querySelector(".q5")
-  p = new p5('instance', el);
-
-  let paper = new Paper(p, s, el, {
-    width: s.inch(11),
-    height: s.inch(8.5),
-  })
-
-  setTimeout(() => {
-    paper.draw_book(book)
-  }, 100)
-}, 200)
-
-
-const defer = (fn, t = 200) => setTimeout(fn, t)
 let data
+
 let pg = 1
 
 fetch("./data.json")
@@ -856,6 +890,40 @@ function init() {
 
   oninit.forEach(fn => typeof fn == "function" ? fn() : null)
 }
+
+oninit.push(() => {
+  let el = document.querySelector(".q5")
+  p = new p5('instance', el);
+
+  let paper = new Paper(p, s, el, {
+    width: s.inch(11),
+    height: s.inch(8.5),
+  })
+
+  setTimeout(() => {
+    paper.draw_book(book)
+  }, 100)
+})
+
+let book
+oninit.push(() => {
+  let headers = data
+    .contents
+    .map((e, i) => Header(
+      e.title,
+      header_iterator()
+    ))
+
+  book = new Book([
+    new Spread(grid, s, headers),
+    ...pages
+  ], {
+    draw_grid: true
+  })
+
+  book.mark_page_offset(6)
+  book.set_page(9)
+})
 
 let container = () => html`
   <style>
@@ -1029,24 +1097,6 @@ function HeaderIterator(ggrid) {
 
 let header_iterator = HeaderIterator(grid)
 
-let book
-oninit.push(() => {
-  let headers = data
-    .contents
-    .map((e, i) => Header(
-      e.title,
-      header_iterator()
-    ))
-
-  book = new Book([
-    new Spread(grid, s, headers),
-    ...pages
-  ], {
-    draw_grid: true
-  })
-
-  book.set_page(5)
-}, 50)
 
 const decodeHTML = function(str) {
   var map = {
