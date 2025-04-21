@@ -879,7 +879,7 @@ fetch("./data.json")
 
 
 let oninit = []
-let pages
+let pages, paper
 function init() {
   render(container, document.body)
 
@@ -910,7 +910,7 @@ oninit.push(() => {
 
 
   // for offset
-  let paper = new Paper(p, s, el, {
+  paper = new Paper(p, s, el, {
     width: s.inch(11),
     height: s.inch(10),
   })
@@ -950,13 +950,13 @@ let container = () => html`
     
     <button 
       style="position:fixed;top:1em;left:0"
-      onclick=${() => { pg--; book.seek(pg); book.draw(p) }} >
+      onclick=${() => { pg--; book.seek(pg); paper.draw_book(book) }} >
       prev
     </button>
 
     <button 
     style="position:fixed;top:0;left:0"
-    onclick=${() => { pg++; book.seek(pg) }} >
+    onclick=${() => { pg++; book.seek(pg); paper.draw_book(book) }} >
       next
     </button>
   </div>
