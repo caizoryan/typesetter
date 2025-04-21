@@ -697,9 +697,9 @@ class Book {
   /**
   @typedef {p5.Image} Image
   */
-  verso_image(p, number) {
+  verso_image(p, number, color = 255) {
     let _p = p.createGraphics(p.width, p.height)
-    _p.background(255)
+    _p.background(color)
     if (this.grid) this.spreads[number].draw_grid(_p, [(number * 2), (number * 2) + 1])
     this.spreads[number].draw(_p)
     let img = _p.get(0, 0, _p.width / 2, _p.height)
@@ -707,9 +707,9 @@ class Book {
     return img
   }
 
-  recto_image(p, number) {
+  recto_image(p, number, color = 255) {
     let _p = p.createGraphics(p.width, p.height)
-    _p.background(255)
+    _p.background(color)
     if (this.grid) this.spreads[number].draw_grid(_p, [(number * 2), (number * 2) + 1])
     this.spreads[number].draw(_p)
     let img = _p.get(_p.width / 2, 0, _p.width / 2, _p.height)
@@ -732,19 +732,21 @@ class Book {
     p.image(img, x, y, img.width, img.height)
   }
 
+  page_is_offset(page) {
+    return this.offsets.includes(page + 1)
+  }
+
   draw_verso(p) {
     let page = this.current_spread * 2 - 1
-    console.log("verso", page)
+    let includes = this.page_is_offset(page)
     let img = this.verso_image(p, this.current_spread)
-    let includes = this.offsets.includes(page + 1)
-    console.log(this.offsets, "includes", page, includes)
     this.draw_img(p, img, 0, includes ? offset_size.px : 0)
   }
 
   draw_recto(p) {
     let page = this.current_spread * 2
+    let includes = this.page_is_offset(page)
     let img = this.recto_image(p, this.current_spread)
-    let includes = this.offsets.includes(page + 1)
     this.draw_img(p, img, img.width, includes ? -offset_size.px : 0)
   }
 
@@ -796,24 +798,25 @@ class Paper {
     let graphic = p.createGraphics(width.px, height.px)
     graphic.background(255)
 
-    let verso_image = book.verso_image(graphic, book.current_spread)
-    let recto_image = book.recto_image(graphic, book.current_spread)
+    let verso_page = book.current_spread * 2 - 1
+    let verso_offset = book.page_is_offset(verso_page)
+    let recto_page = book.current_spread * 2
+    let recto_offset = book.page_is_offset(recto_page)
+
+    let verso_image = book.verso_image(graphic, book.current_spread, verso_offset ? "#ABE2F7" : 255)
+    let recto_image = book.recto_image(graphic, book.current_spread, recto_offset ? "#ABE2F7" : 255)
 
     this.draw_crop_marks(book)
 
     let left = (this.size.width.px - width.px) / 2
     let top = (this.size.height.px - height.px) / 2
 
-
-    let verso_offset = false
-    let recto_ofsset = true
-
     // if offset also get pairing underneat page...
 
     p.image(verso_image, left,
       verso_offset ? top - (offset_size.px / 2) : top)
     p.image(recto_image, left + width.px / 2,
-      recto_ofsset ? top - (offset_size.px / 2) : top)
+      recto_offset ? top - (offset_size.px / 2) : top)
   }
 
   /**@param {Book} book */
@@ -934,7 +937,7 @@ oninit.push(() => {
   })
 
   book.mark_page_offset(7)
-  book.set_page(7)
+  book.set_page(11)
 })
 
 let container = () => html`
