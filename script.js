@@ -1,10 +1,10 @@
-import { sig, mem, render, HTML as html, eff_on } from "/lib/solid/monke.js"
+import { sig, mem, render, HTML as html, eff_on } from "/lib/chowk/monke.js"
 import { hyphenateSync } from "/lib/hyphenator/hyphenate.js"
 import { Q5 as p5 } from "/lib/q5/q5.js"
 
 const isOdd = num => num % 2 == 1;
-let dpi = 150
-let viewport = .8
+let dpi = 180
+let viewport = .93
 let mx = 0, my = 0
 
 const GlobalStyle = `
@@ -97,7 +97,10 @@ function draw_line(p, text, x, y, length, state, hooks) {
     if (typeof hooks?.beforeWord == "function") hooks?.beforeWord(props())
     if (line_state.horizontal_pos + word_len > length.px) {
       // try hyphenation...
-      if (!state.paragraph.hyphenate) return
+      if (!state.paragraph.hyphenate) {
+        skip = true
+        return
+      }
       let _leftover = try_hyphenation(word)
       if (_leftover) {
         line_state.hyphen_leftover = _leftover
@@ -382,6 +385,10 @@ class Grid {
     this.s = s
   }
 
+  hanglines() {
+    return this.props.hanglines
+  }
+
   set_margin(margin) {
     this.props.margin = margin
   }
@@ -444,7 +451,7 @@ class Grid {
 
 let grid = new Grid({
   margin: {
-    top: s.em(8),
+    top: s.em(12),
     bottom: s.em(4),
     inside: s.em(1),
     outside: s.em(4),
@@ -452,7 +459,18 @@ let grid = new Grid({
 
   columns: 8,
   gutter: s.point(6),
-  hanglines: [],
+  hanglines: [
+    s.em(12),
+    s.em(12.5),
+    s.em(18),
+    s.em(18.5),
+    s.em(24),
+    s.em(24.5),
+    s.em(30),
+    s.em(30.5),
+    s.em(36),
+    s.em(36.5),
+  ],
   page_width: s.inch(10),
   page_height: s.inch(8),
 }, s)
@@ -510,8 +528,15 @@ class Spread {
     p.strokeWeight(.2)
 
 
+
     recto.forEach((col) => { p.rect(col.x.px, col.y.px, col.w.px, col.h.px) })
     verso.forEach((col) => { p.rect(col.x.px, col.y.px, col.w.px, col.h.px) })
+
+    p.stroke(0, 0, 255)
+    p.strokeWeight(.2)
+    grid.hanglines().forEach(y => {
+      p.line(0, y.px, p.width, y.px)
+    })
   }
 
 
@@ -536,7 +561,7 @@ class Spread {
   add_graphic() { }
 }
 
-let offset_size = s.inch(1.5)
+let offset_size = s.em(6)
 class Book {
   /**
   @param {Spread[]} [spreads=[]] 
@@ -588,7 +613,6 @@ class Book {
 
   // Will take sheet number, find pages in the sheet and mark it offset
   mark_sheet_offset(index) {
-    console.log('recieved sheet', index)
     if (!this.validate_spread(index)) return
 
     let spreads = this.saddle_pages()
@@ -596,16 +620,12 @@ class Book {
     let sheet = spreads[index]
     let pair_index = isOdd(index) ? index - 1 : index + 1
     let pair = spreads[pair_index]
-    console.log('pair', index, pair_index)
-    console.log('contents', sheet, pair)
 
     sheet.forEach((e) => {
-      console.log('page', e)
       if (this.offsets.findIndex(f => f == e) == -1) { this.offsets.push(e) }
     })
 
     pair.forEach((e) => {
-      console.log('page', e)
       if (this.offsets.findIndex(f => f == e) == -1) { this.offsets.push(e) }
     })
   }
@@ -702,7 +722,6 @@ class Book {
     if (this.grid) this.spreads[number].draw_grid(_p, [(number * 2), (number * 2) + 1])
     this.spreads[number].draw(_p)
     if (number == 0) _p.background(200)
-    console.log("width:", _p.width, p.width)
     let img = _p.get(0, 0, _p.width / 2, _p.height)
 
     return img
@@ -771,11 +790,12 @@ class Paper {
    * @param {p5} p 
    * @param {Element} el 
    * */
-  constructor(p, s, el, size) {
+  constructor(p, s, el, size, print = false) {
     this.setup(p, s, el)
     this.size = size
     this.scale = s
     this.p5 = p
+    this.print = print
   }
 
   setup(p, s, el) {
@@ -801,7 +821,6 @@ class Paper {
     let left = (this.size.width.px - width.px) / 2
     let top = (this.size.height.px - height.px) / 2
 
-    console.log("width", width.px, p.width)
     let graphic = p.createGraphics(width.px, height.px)
     graphic.background(255)
 
@@ -812,7 +831,7 @@ class Paper {
       let verso_offset = book.page_is_offset(verso_page)
       let offset_pages = book.offsets
 
-      let found = -1
+      let found = -100
       if (verso_offset) return found
 
       offset_pages.forEach(page => {
@@ -835,11 +854,10 @@ class Paper {
       let recto_offset = book.page_is_offset(recto_page)
       let offset_pages = book.offsets
 
-      let found = -1
+      let found = -200
       if (recto_offset) return found
 
       offset_pages.forEach(page => {
-        if (found != -1) return
         if (isOdd(page) &&
           page > recto_page) {
           // if diff is less then 
@@ -887,8 +905,8 @@ class Paper {
     let visible_recto = nextvisiblerecto(book.current_spread)
     let visible_verso = nextvisibleverso(book.current_spread)
 
-    if (visible_recto != -1) draw_recto(graphic, book.page_to_spread(visible_recto), false)
-    if (visible_verso != -1) draw_verso(graphic, book.page_to_spread(visible_verso), false)
+    if (visible_recto >= 0) draw_recto(graphic, book.page_to_spread(visible_recto), false)
+    if (visible_verso >= 0) draw_verso(graphic, book.page_to_spread(visible_verso), false)
 
     draw_verso(graphic, book.current_spread)
     draw_recto(graphic, book.current_spread)
@@ -921,6 +939,11 @@ class Paper {
   draw_saddle(book) {
     let p = this.p5
 
+    if (this.print) {
+      p.background(255);
+    } else {
+      p.background(200);
+    }
     let width = book.structure?.props.page_width
     let height = book.structure?.props.page_height
 
@@ -933,11 +956,18 @@ class Paper {
     let left = (this.size.width.px - width.px) / 2
     let top = (this.size.height.px - height.px) / 2
 
-
     p.image(graphic, left, top, width.px, height.px)
+    return graphic
   }
   /**@param {Book} book */
   draw_spread(book) { }
+
+  /**@param {Book} book */
+  save_saddle_spread(book) {
+    // will draw saddle spread and download it
+    let save = this.draw_saddle(book)
+    this.p5.save("spread-" + book.current_spread + ".jpg")
+  }
 }
 
 
@@ -945,7 +975,6 @@ class Paper {
 let p
 let data
 
-let pg = 1
 
 fetch("./quick.json")
   .then((res) => res.json())
@@ -954,12 +983,15 @@ fetch("./quick.json")
 
 
 let oninit = []
-let pages, paper
+
+
+/** @type {Paper} */
+let paper
+let pages
+
 function init() {
   render(container, document.body)
-
-  pages = data.contents.map((e, i) => spread_from_block(i, [graphic()]))
-
+  pages = data.contents.map((e) => spread_from_block(e, [graphic()]))
   oninit.forEach(fn => typeof fn == "function" ? fn() : null)
 }
 
@@ -967,11 +999,10 @@ oninit.push(() => {
   let el = document.querySelector(".q5")
   p = new p5('instance', el);
 
-  // real
-  // let paper = new Paper(p, s, el, {
+  // paper = new Paper(p, s, el, {
   //   width: s.inch(11),
   //   height: s.inch(8.5),
-  // })
+  // }, true)
 
 
   // for offset
@@ -981,31 +1012,71 @@ oninit.push(() => {
   })
 
   setTimeout(() => {
-    paper.draw_book(book)
+    //paper.draw_book(book)
+    paper.draw_saddle(book)
   }, 100)
 })
 
+class TextFrame {
+  /**
+   * @param {ParagraphProps} props 
+   * @param {Grid} structure 
+   * */
+  constructor(text, props) {
+    this.text = text
+    this.props = props
+  }
+
+  draw(p, prop) {
+    draw_paragraph(p, { text: this.text, ...this.props }, prop.structure)
+  }
+}
+
+/**@type {Book}*/
 let book
 oninit.push(() => {
-  let headers = data
-    .contents
-    .map((e, i) => Header(
-      e.title,
-      header_iterator()
-    ))
-
   book = new Book([
-    new Spread(grid, s, headers),
-    ...pages
-  ], {
-    draw_grid: true
-  })
+    // x----------------x
+    // Cover page
+    // x----------------x
+    new Spread(grid, s,
+      [
 
-  book.mark_page_offset(14)
-  book.mark_page_offset(7)
-  book.set_page(11)
+        new TextFrame("QU IC K {B} O-O K?", {
+          x: (grid) => grid.recto_columns()[2].x,
+          y: (grid) => grid.hanglines()[3],
+          ...stylesheet.title,
+          length: s.em(11),
+          height: s.em(28),
+          color: "black",
+          font_family: "Arial Narrow",
+          font_weight: 100,
+        }),
+
+        new TextFrame("QUICK BOOK?", {
+          x: (grid) => grid.recto_columns()[0].x,
+          y: (grid) => grid.hanglines()[4],
+          height: s.em(8),
+          length: s.em(18),
+          ...stylesheet.title,
+        }),
+      ]),
+
+    ...pages
+  ])
+
+  book.mark_page_offset(10)
+  //book.mark_page_offset(7)
+  book.set_page(1)
 })
 
+let saddle = sig(false)
+let drawpaper = () => saddle() ?
+  paper.draw_saddle(book) :
+  paper.draw_book(book)
+
+oninit.push(() => eff_on(saddle, drawpaper))
+let pg = sig(0)
 let container = () => html`
   <style>
     ${GlobalStyle}
@@ -1013,17 +1084,37 @@ let container = () => html`
 
   <div class="container">
     <div class="q5"></div>
+
+    <button 
+    style="position:fixed;top:0;left:0"
+    onclick=${() => {
+    pg(book.current_spread + 1);
+    book.set_spread(pg());
+    drawpaper()
+  }} >
+      next
+    </button>
+
+    <p style="position:fixed;top:0;left:3em"> ${pg} </p>
     
     <button 
-      style="position:fixed;top:1em;left:0"
-      onclick=${() => { pg -= 2; book.seek(pg); paper.draw_book(book) }} >
+      style="position:fixed;top:2em;left:0"
+      onclick=${() => {
+    pg(book.current_spread - 1); book.set_spread(pg()); drawpaper()
+  }} >
       prev
     </button>
 
     <button 
-    style="position:fixed;top:0;left:0"
-    onclick=${() => { pg += 2; book.seek(pg); paper.draw_book(book) }} >
-      next
+      style="position:fixed;top:4em;left:0"
+      onclick=${() => saddle(!saddle())} >
+      ${() => saddle() ? "display" : "print"}
+    </button>
+    
+    <button 
+      style="position:fixed;top:6em;left:0"
+      onclick=${() => paper.save_saddle_spread(book)} >
+      download
     </button>
   </div>
 `
@@ -1035,12 +1126,11 @@ let container = () => html`
 }}*/
 let stylesheet = {
   title: {
-    text: "",
-    font_family: "ABC Maxi Round Unlicensed Trial",
-    font_weight: 300,
-    length: (grid) => grid.column_width(6),
+    font_family: "GapSansBlack",
+    length: (grid) => grid.column_width(8),
     font_size: s.point(38),
-    leading: s.point(22),
+    leading: s.point(48),
+    color: "#0000ff",
   },
   body: {
     text: "",
@@ -1054,10 +1144,8 @@ let stylesheet = {
 }
 
 
-function spread_from_block(index, extensions = []) {
-  console.log(data)
-  let t_index = index
-  let through_title = Header(data.contents[t_index].title, {
+function spread_from_block(block, extensions = []) {
+  let through_title = Header(block.title, {
     x: (grid) => grid.verso_columns()[0].x,
     y: (grid) =>
       s.add(
@@ -1082,8 +1170,7 @@ function spread_from_block(index, extensions = []) {
     y: (grid) => s.add(grid.recto_columns()[0].y, s.em(4)),
   })
 
-  let d = data.contents[t_index]
-  if (d) through.set_text(d.content)
+  through.set_text(block.content)
 
   return new Spread(grid, s, [through, through_title, ...extensions])
 }
@@ -1142,42 +1229,6 @@ function Header(text, para) {
   return drawable
 }
 
-/**@returns {() => ParagraphProps}*/
-function HeaderIterator(ggrid) {
-  let next = 0
-  let col = 0
-
-  let nextprop = () => {
-    let current = next
-    next++
-
-    let y = (grid) => s.add(s.em(1), s.em(current * 12))
-    let _y = y(ggrid)
-    let bounds = s.sub(_y, s.sub(ggrid.props.page_height, ggrid.props.margin.bottom)).px
-    let out = (bounds > 0)
-    if (out) {
-      current = 0
-      next = 1
-      col++
-    }
-
-    let cur_col = col
-
-    return {
-      x: (grid) => {
-        return (cur_col == 0)
-          ? grid.verso_columns()[0].x
-          : grid.recto_columns()[0].x
-      },
-
-      y: y,
-    }
-  }
-
-  return nextprop
-}
-
-let header_iterator = HeaderIterator(grid)
 
 
 const decodeHTML = function(str) {
