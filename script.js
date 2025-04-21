@@ -3,7 +3,7 @@ import { hyphenateSync } from "/lib/hyphenator/hyphenate.js"
 import { Q5 as p5 } from "/lib/q5/q5.js"
 
 let dpi = 150
-let viewport = .45
+let viewport = .42
 let mx = 0, my = 0
 
 const GlobalStyle = `
@@ -205,11 +205,6 @@ function draw_paragraph(p, paragraph, grid) {
   return _paragraph.text
 }
 
-
-
-/**
-
-*/
 class Scale {
   constructor(scale = 1, viewport = 1) {
     this.dpi = window.devicePixelRatio * 96
@@ -541,6 +536,7 @@ class Spread {
   add_graphic() { }
 }
 
+let offset_size = s.inch(1.5)
 class Book {
   /**
   @param {Spread[]} [spreads=[]] 
@@ -577,7 +573,6 @@ class Book {
       pair(i)[0] = f_verso
     }
 
-    console.log("pages", [...pages])
 
     let pairedup = []
 
@@ -586,20 +581,9 @@ class Book {
       pairedup.push(pairskiplast(i))
     }
 
-    console.log("paired up", pairedup)
+    console.log(pairedup)
 
-    // pair pairs
-
-
-    // pair each pair and flatten
-    let pairs = []
-
-    for (let i = 0; i <= middle; i++) {
-      pairs.push(pages[i])
-      pairs.push(pair(i))
-    }
-
-    return pairs
+    return pairedup
   }
 
   // Will take sheet number, find pages in the sheet and mark it offset
@@ -608,12 +592,13 @@ class Book {
     if (!this.validate_spread(index)) return
 
     let spreads = this.saddle_pages()
+
     let sheet = spreads[index]
     const isOdd = num => num % 2 == 1;
     let pair_index = isOdd(index) ? index - 1 : index + 1
     let pair = spreads[pair_index]
-    console.log('saddle', spreads)
     console.log('pair', index, pair_index)
+    console.log('contents', sheet, pair)
 
     sheet.forEach((e) => {
       console.log('page', e)
@@ -695,9 +680,11 @@ class Book {
   }
 
   draw(p) {
-    console.log("page", this.current_spread)
-    if (this.grid) this.spreads[this.current_spread].draw_grid(p, this.pages()[this.current_spread])
-    this.spreads[this.current_spread].draw(p)
+    console.log("page drawing", this.current_spread)
+    //if (this.grid) this.spreads[this.current_spread].draw_grid(p, this.pages()[this.current_spread])
+    //this.spreads[this.current_spread].draw(p)
+    this.draw_recto(p)
+    this.draw_verso(p)
   }
 
   page_image(p, number) {
@@ -712,6 +699,7 @@ class Book {
   */
   verso_image(p, number) {
     let _p = p.createGraphics(p.width, p.height)
+    _p.background(255)
     if (this.grid) this.spreads[number].draw_grid(_p, [(number * 2), (number * 2) + 1])
     this.spreads[number].draw(_p)
     let img = _p.get(0, 0, _p.width / 2, _p.height)
@@ -721,6 +709,7 @@ class Book {
 
   recto_image(p, number) {
     let _p = p.createGraphics(p.width, p.height)
+    _p.background(255)
     if (this.grid) this.spreads[number].draw_grid(_p, [(number * 2), (number * 2) + 1])
     this.spreads[number].draw(_p)
     let img = _p.get(_p.width / 2, 0, _p.width / 2, _p.height)
@@ -745,14 +734,18 @@ class Book {
 
   draw_verso(p) {
     let page = this.current_spread * 2 - 1
+    console.log("verso", page)
     let img = this.verso_image(p, this.current_spread)
-    this.draw_img(p, img, 0, this.offsets.includes(page) ? -200 : 0)
+    let includes = this.offsets.includes(page + 1)
+    console.log(this.offsets, "includes", page, includes)
+    this.draw_img(p, img, 0, includes ? offset_size.px : 0)
   }
 
   draw_recto(p) {
     let page = this.current_spread * 2
     let img = this.recto_image(p, this.current_spread)
-    this.draw_img(p, img, img.width, this.offsets.includes(page) ? -200 : 0)
+    let includes = this.offsets.includes(page + 1)
+    this.draw_img(p, img, img.width, includes ? -offset_size.px : 0)
   }
 
   draw_page_set(p, num1, num2) {
@@ -803,14 +796,24 @@ class Paper {
     let graphic = p.createGraphics(width.px, height.px)
     graphic.background(255)
 
-    book.draw(graphic)
+    let verso_image = book.verso_image(graphic, book.current_spread)
+    let recto_image = book.recto_image(graphic, book.current_spread)
+
     this.draw_crop_marks(book)
 
     let left = (this.size.width.px - width.px) / 2
     let top = (this.size.height.px - height.px) / 2
 
 
-    p.image(graphic, left, top, width.px, height.px)
+    let verso_offset = false
+    let recto_ofsset = true
+
+    // if offset also get pairing underneat page...
+
+    p.image(verso_image, left,
+      verso_offset ? top - (offset_size.px / 2) : top)
+    p.image(recto_image, left + width.px / 2,
+      recto_ofsset ? top - (offset_size.px / 2) : top)
   }
 
   /**@param {Book} book */
@@ -882,10 +885,11 @@ function init() {
     spread_from_block(1, [graphic()]),
     spread_from_block(2, [graphic()]),
     spread_from_block(3, [graphic()]),
-    // spread_from_block(4, [graphic()]),
-    // spread_from_block(5, [graphic()]),
+    spread_from_block(4, [graphic()]),
+    spread_from_block(5, [graphic()]),
+    spread_from_block(5, [graphic()]),
+    spread_from_block(5, [graphic()]),
     // spread_from_block(6, [graphic()]),
-    // spread_from_block(7, [graphic()]),
   ]
 
   oninit.forEach(fn => typeof fn == "function" ? fn() : null)
@@ -895,9 +899,17 @@ oninit.push(() => {
   let el = document.querySelector(".q5")
   p = new p5('instance', el);
 
+  // real
+  // let paper = new Paper(p, s, el, {
+  //   width: s.inch(11),
+  //   height: s.inch(8.5),
+  // })
+
+
+  // for offset
   let paper = new Paper(p, s, el, {
     width: s.inch(11),
-    height: s.inch(8.5),
+    height: s.inch(10),
   })
 
   setTimeout(() => {
@@ -921,8 +933,8 @@ oninit.push(() => {
     draw_grid: true
   })
 
-  book.mark_page_offset(6)
-  book.set_page(9)
+  book.mark_page_offset(7)
+  book.set_page(7)
 })
 
 let container = () => html`
