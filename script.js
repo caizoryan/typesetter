@@ -2,7 +2,7 @@ import { sig, mem, render, HTML as html, eff_on } from "/lib/solid/monke.js"
 import { hyphenateSync } from "/lib/hyphenator/hyphenate.js"
 import { Q5 as p5 } from "/lib/q5/q5.js"
 
-let dpi = 250
+let dpi = 150
 let viewport = .45
 let mx = 0, my = 0
 
@@ -233,6 +233,14 @@ class Scale {
   }
 
   /**
+  @param {Unit} unit1 
+  @param {Unit} unit2 
+  */
+  div(unit1, unit2) {
+    return this.px_raw(unit1.px / unit2.px)
+  }
+
+  /**
   @param {number} value 
   @returns {Unit} 
   */
@@ -439,6 +447,7 @@ class Grid {
 }
 
 let grid = new Grid({
+
   margin: {
     top: s.em(8),
     bottom: s.em(4),
@@ -449,8 +458,8 @@ let grid = new Grid({
   columns: 8,
   gutter: s.point(6),
   hanglines: [],
-  page_width: s.inch(11),
-  page_height: s.inch(8.5),
+  page_width: s.inch(10),
+  page_height: s.inch(8),
 }, s)
 
 
@@ -539,7 +548,7 @@ class Book {
   */
   constructor(spreads = [], opts = { draw_grid: true }) {
     this.grid = opts.draw_grid
-
+    this.structure = spreads[0] ? spreads[0].props().structure : undefined
     this.current_spread = 0
     /**@type Spread[]*/
 
@@ -702,6 +711,99 @@ class Book {
   }
 }
 
+class Paper {
+  /**
+   * @param {{width: Unit, height: Unit}} size 
+   * @param {Scale} s 
+   * @param {p5} p 
+   * @param {Element} el 
+   * */
+  constructor(p, s, el, size) {
+    this.setup(p, s, el)
+    this.size = size
+    this.scale = s
+    this.p5 = p
+  }
+
+  setup(p, s, el) {
+    p.setup = () => {
+      p.createCanvas(this.size.width.px, this.size.height.px);
+      el.style.transform = "scale(" + (1 / s.scale) * viewport + ")"
+    };
+
+    p.draw = () => {
+      p.background(200);
+      p.noFill();
+      p.noLoop()
+    };
+  }
+
+  /**@param {Book} book */
+  draw_book(book) {
+    let p = this.p5
+
+    let width = book.structure?.props.page_width
+    let height = book.structure?.props.page_height
+
+    let graphic = p.createGraphics(width.px, height.px)
+    graphic.background(255)
+
+    book.draw(graphic)
+    this.draw_crop_marks(book)
+
+    let left = (this.size.width.px - width.px) / 2
+    let top = (this.size.height.px - height.px) / 2
+
+
+    p.image(graphic, left, top, width.px, height.px)
+  }
+
+  /**@param {Book} book */
+  draw_crop_marks(book) {
+    let p = this.p5
+
+    let width = book.structure?.props.page_width
+    let height = book.structure?.props.page_height
+    let left = (this.size.width.px - width.px) / 2
+    let top = (this.size.height.px - height.px) / 2
+
+    // crop marks
+    p.line(left, 0, left, top)
+    p.line(0, top, left, top)
+
+    p.line(p.width - left, 0, p.width - left, top)
+    p.line(p.width, top, p.width - left, top)
+
+    p.line(0, p.height - top, left, p.height - top)
+    p.line(left, p.height, left, p.height - top)
+
+    p.line(p.width, p.height - top, p.width - left, p.height - top)
+    p.line(p.width - left, p.height, p.width - left, p.height - top)
+  }
+
+  /**@param {Book} book */
+  draw_saddle(book) {
+    let p = this.p5
+
+    let width = book.structure?.props.page_width
+    let height = book.structure?.props.page_height
+
+    let graphic = p.createGraphics(width.px, height.px)
+    graphic.background(255)
+
+    book.draw_saddle_view(graphic)
+    this.draw_crop_marks(book)
+
+    let left = (this.size.width.px - width.px) / 2
+    let top = (this.size.height.px - height.px) / 2
+
+
+    p.image(graphic, left, top, width.px, height.px)
+  }
+  /**@param {Book} book */
+  draw_spread(book) { }
+}
+
 
 /**@type {p5}*/
 let p
@@ -709,43 +811,20 @@ let oracle, gapsans
 
 
 function draw(p) {
-  p.background("white");
-  p.textWeight(600)
-  p.textFont(oracle)
-
-
-  mx = s.px(p.mouseX).px / viewport
-  my = s.px(p.mouseY).px / viewport
-
-  p.rect(mx, my, 10, 10)
-
-  book.draw(p)
-  //book.draw_page_set(p, 1,9)
-  //book.draw_saddle_view(p)
-  //book.draw_recto(p)
-  // book.seek(0)
-  //book.draw_recto(p)
-  p.noLoop()
 }
 
 setTimeout(() => {
   let el = document.querySelector(".q5")
   p = new p5('instance', el);
 
-  p.setup = () => {
-    p.createCanvas(s.inch(11).px, s.inch(8.5).px);
-    el.style.transform = "scale(" + (1 / s.scale) * viewport + ")"
-  };
+  let paper = new Paper(p, s, el, {
+    width: s.inch(11),
+    height: s.inch(8.5),
+  })
 
-
-  p.draw = () => {
-    draw(p)
-    //p.noLoop()
-  };
-
-  p.mousePressed = () => {
-    p.save("print.png")
-  }
+  setTimeout(() => {
+    paper.draw_saddle(book)
+  }, 100)
 }, 200)
 
 
@@ -760,11 +839,11 @@ fetch("./data.json")
 
 
 let oninit = []
+let pages
 function init() {
   render(container, document.body)
-  oninit.forEach(fn => typeof fn == "function" ? fn() : null)
 
-  let pages = [
+  pages = [
     spread_from_block(0, [graphic()]),
     spread_from_block(1, [graphic()]),
     spread_from_block(2, [graphic()]),
@@ -774,6 +853,8 @@ function init() {
     spread_from_block(6, [graphic()]),
     spread_from_block(7, [graphic()]),
   ]
+
+  oninit.forEach(fn => typeof fn == "function" ? fn() : null)
 }
 
 let container = () => html`
@@ -969,11 +1050,14 @@ oninit.push(() => {
       header_iterator()
     ))
 
-  book = new Book([new Spread(grid, s, headers)], {
-    draw_grid: false
+  book = new Book([
+    new Spread(grid, s, headers),
+    ...pages
+  ], {
+    draw_grid: true
   })
 
-  book.set_page(1)
+  book.set_page(5)
 }, 50)
 
 const decodeHTML = function(str) {
