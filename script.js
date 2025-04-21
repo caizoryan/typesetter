@@ -947,7 +947,7 @@ let data
 
 let pg = 1
 
-fetch("./data.json")
+fetch("./quick.json")
   .then((res) => res.json())
   .then((res) => data = res)
   .then(_ => init())
@@ -958,21 +958,7 @@ let pages, paper
 function init() {
   render(container, document.body)
 
-  pages = [
-    spread_from_block(0, [graphic()]),
-    spread_from_block(2, [graphic()]),
-    spread_from_block(1, [graphic()]),
-    spread_from_block(2, [graphic()]),
-    spread_from_block(3, [graphic()]),
-    spread_from_block(5, [graphic()]),
-    spread_from_block(3, [graphic()]),
-    spread_from_block(2, [graphic()]),
-    spread_from_block(3, [graphic()]),
-    spread_from_block(4, [graphic()]),
-    spread_from_block(5, [graphic()]),
-    spread_from_block(5, [graphic()]),
-    // spread_from_block(6, [graphic()]),
-  ]
+  pages = data.contents.map((e, i) => spread_from_block(i, [graphic()]))
 
   oninit.forEach(fn => typeof fn == "function" ? fn() : null)
 }
@@ -1069,6 +1055,7 @@ let stylesheet = {
 
 
 function spread_from_block(index, extensions = []) {
+  console.log(data)
   let t_index = index
   let through_title = Header(data.contents[t_index].title, {
     x: (grid) => grid.verso_columns()[0].x,
