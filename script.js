@@ -823,7 +823,7 @@ setTimeout(() => {
   })
 
   setTimeout(() => {
-    paper.draw_saddle(book)
+    paper.draw_book(book)
   }, 100)
 }, 200)
 
@@ -848,10 +848,10 @@ function init() {
     spread_from_block(1, [graphic()]),
     spread_from_block(2, [graphic()]),
     spread_from_block(3, [graphic()]),
-    spread_from_block(4, [graphic()]),
-    spread_from_block(5, [graphic()]),
-    spread_from_block(6, [graphic()]),
-    spread_from_block(7, [graphic()]),
+    // spread_from_block(4, [graphic()]),
+    // spread_from_block(5, [graphic()]),
+    // spread_from_block(6, [graphic()]),
+    // spread_from_block(7, [graphic()]),
   ]
 
   oninit.forEach(fn => typeof fn == "function" ? fn() : null)
@@ -907,24 +907,14 @@ let stylesheet = {
 
 function spread_from_block(index, extensions = []) {
   let t_index = index
-  let throuth_title = new LinkedFrame("")
-
-  throuth_title.add({
-    ...stylesheet.title,
-    text: "",
-    x: (grid) => grid.verso_columns()[3].x,
+  let through_title = Header(data.contents[t_index].title, {
+    x: (grid) => grid.verso_columns()[0].x,
     y: (grid) =>
       s.add(
         grid.verso_columns()[0].y,
         s.px_raw(grid.column_width(3).px)
       ),
-
-    height: s.em(12),
-    rect: false,
   })
-
-  let d = data.contents[t_index]
-  if (d) throuth_title.set_text(d.title)
 
   let through = new LinkedFrame("Hewl")
   through.add({
@@ -932,6 +922,7 @@ function spread_from_block(index, extensions = []) {
     text: "",
     x: (grid) => grid.verso_columns()[1].x,
     y: (grid) => s.add(grid.verso_columns()[0].y, s.em(4)),
+    height: s.em(21)
   })
 
   through.add({
@@ -939,12 +930,12 @@ function spread_from_block(index, extensions = []) {
     text: "",
     x: (grid) => grid.recto_columns()[1].x,
     y: (grid) => s.add(grid.recto_columns()[0].y, s.em(4)),
-    height: s.em(21)
   })
 
+  let d = data.contents[t_index]
   if (d) through.set_text(d.content)
 
-  return new Spread(grid, s, [through, throuth_title, ...extensions])
+  return new Spread(grid, s, [through, through_title, ...extensions])
 }
 
 const graphic = () => {
@@ -1036,12 +1027,9 @@ function HeaderIterator(ggrid) {
   return nextprop
 }
 
-
-
 let header_iterator = HeaderIterator(grid)
 
 let book
-
 oninit.push(() => {
   let headers = data
     .contents
