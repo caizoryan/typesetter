@@ -2,6 +2,7 @@ import { sig, mem, render, HTML as html, eff_on } from "/lib/solid/monke.js"
 import { hyphenateSync } from "/lib/hyphenator/hyphenate.js"
 import { Q5 as p5 } from "/lib/q5/q5.js"
 
+const isOdd = num => num % 2 == 1;
 let dpi = 150
 let viewport = .42
 let mx = 0, my = 0
@@ -594,7 +595,6 @@ class Book {
     let spreads = this.saddle_pages()
 
     let sheet = spreads[index]
-    const isOdd = num => num % 2 == 1;
     let pair_index = isOdd(index) ? index - 1 : index + 1
     let pair = spreads[pair_index]
     console.log('pair', index, pair_index)
@@ -733,7 +733,7 @@ class Book {
   }
 
   page_is_offset(page) {
-    return this.offsets.includes(page + 1)
+    return this.offsets.includes(page)
   }
 
   draw_verso(p) {
@@ -795,29 +795,98 @@ class Paper {
 
     let width = book.structure?.props.page_width
     let height = book.structure?.props.page_height
+    let left = (this.size.width.px - width.px) / 2
+    let top = (this.size.height.px - height.px) / 2
 
     let graphic = p.createGraphics(width.px, height.px)
     graphic.background(255)
 
-    let verso_page = book.current_spread * 2 - 1
-    let verso_offset = book.page_is_offset(verso_page)
-    let recto_page = book.current_spread * 2
-    let recto_offset = book.page_is_offset(recto_page)
-
-    let verso_image = book.verso_image(graphic, book.current_spread, verso_offset ? "#ABE2F7" : 255)
-    let recto_image = book.recto_image(graphic, book.current_spread, recto_offset ? "#ABE2F7" : 255)
-
     this.draw_crop_marks(book)
 
-    let left = (this.size.width.px - width.px) / 2
-    let top = (this.size.height.px - height.px) / 2
+    let nextvisibleverso = (spread) => {
+      let verso_page = spread * 2
+      let verso_offset = book.page_is_offset(verso_page)
+      let offset_pages = book.offsets
 
-    // if offset also get pairing underneat page...
+      let found = -1
+      if (verso_offset) return found
 
-    p.image(verso_image, left,
-      verso_offset ? top - (offset_size.px / 2) : top)
-    p.image(recto_image, left + width.px / 2,
-      recto_offset ? top - (offset_size.px / 2) : top)
+      offset_pages.forEach(page => {
+        if (found != -1) return
+        if (
+          !isOdd(page) &&
+          page < verso_page
+        ) {
+          found = page
+        }
+      })
+
+      return found
+    }
+
+    let nextvisiblerecto = (spread) => {
+      let recto_page = spread * 2 + 1
+      let recto_offset = book.page_is_offset(recto_page)
+      let offset_pages = book.offsets
+
+      let found = -1
+      if (recto_offset) return found
+
+      offset_pages.forEach(page => {
+        if (found != -1) return
+        if (
+          isOdd(page) &&
+          page > recto_page
+        ) {
+          found = page
+          console.log("found", page)
+        }
+      })
+
+      return found
+    }
+
+
+    let draw_verso = (graphic, spread, draw_behind = true) => {
+      let verso_page = spread * 2
+      let verso_offset = book.page_is_offset(verso_page)
+      let verso_image = book.verso_image(graphic, spread, verso_offset ? "#ABE2F7" : 255)
+
+      if (verso_offset && draw_behind) {
+        draw_verso(graphic, spread - 1)
+        p.opacity(.8)
+      }
+
+      p.image(verso_image, left,
+        verso_offset ? top - (offset_size.px / 2) : top)
+      p.opacity(1)
+    }
+
+
+    let draw_recto = (graphic, spread, draw_behind = true) => {
+      let recto_page = spread * 2 + 1
+      let recto_offset = book.page_is_offset(recto_page)
+      let recto_image = book.recto_image(graphic, spread, recto_offset ? "#ABE2F7" : 255)
+
+      if (recto_offset && draw_behind) {
+        draw_recto(graphic, spread + 1)
+        p.opacity(.8)
+      }
+
+      p.image(recto_image, left + width.px / 2,
+        recto_offset ? top - (offset_size.px / 2) : top)
+      p.opacity(1)
+    }
+
+
+    let visible_recto = nextvisiblerecto(book.current_spread)
+    let visible_verso = nextvisibleverso(book.current_spread)
+
+    if (visible_recto != -1) draw_recto(graphic, book.page_to_spread(visible_recto), false)
+    if (visible_verso != -1) draw_verso(graphic, book.page_to_spread(visible_verso), false)
+
+    draw_verso(graphic, book.current_spread)
+    draw_recto(graphic, book.current_spread)
   }
 
   /**@param {Book} book */
@@ -937,7 +1006,7 @@ oninit.push(() => {
     draw_grid: true
   })
 
-  book.mark_page_offset(7)
+  book.mark_page_offset(14)
   book.set_page(11)
 })
 
