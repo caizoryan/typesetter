@@ -3,7 +3,7 @@ import { hyphenateSync } from "/lib/hyphenator/hyphenate.js"
 import { Q5 as p5 } from "/lib/q5/q5.js"
 
 const isOdd = num => num % 2 == 1;
-let dpi = 180
+let dpi = 500
 let viewport = .93
 let mx = 0, my = 0
 
@@ -524,8 +524,8 @@ class Spread {
       this.structure.recto_columns()[3].y.px)
 
     p.noFill()
-    p.stroke(0)
-    p.strokeWeight(.2)
+    p.stroke(200, 0, 250)
+    p.strokeWeight(.5)
 
 
 
@@ -999,17 +999,17 @@ oninit.push(() => {
   let el = document.querySelector(".q5")
   p = new p5('instance', el);
 
-  // paper = new Paper(p, s, el, {
-  //   width: s.inch(11),
-  //   height: s.inch(8.5),
-  // }, true)
+  paper = new Paper(p, s, el, {
+    width: s.inch(11),
+    height: s.inch(8.5),
+  }, true)
 
 
   // for offset
-  paper = new Paper(p, s, el, {
-    width: s.inch(11),
-    height: s.inch(11.1),
-  })
+  // paper = new Paper(p, s, el, {
+  //   width: s.inch(11),
+  //   height: s.inch(11.1),
+  // })
 
   setTimeout(() => {
     //paper.draw_book(book)
@@ -1144,6 +1144,17 @@ let stylesheet = {
 }
 
 
+// x-----------------------x
+// *Header: Spread from block
+// x-----------------------x
+//
+/**
+ * @param {{
+ *  content: string,
+ *  title: string,
+ * }} block 
+ *
+ * */
 function spread_from_block(block, extensions = []) {
   let through_title = Header(block.title, {
     x: (grid) => grid.verso_columns()[0].x,
