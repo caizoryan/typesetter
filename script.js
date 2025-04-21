@@ -791,6 +791,7 @@ class Paper {
   /**@param {Book} book */
   draw_book(book) {
     let p = this.p5
+    p.background(200);
 
     let width = book.structure?.props.page_width
     let height = book.structure?.props.page_height
@@ -950,13 +951,13 @@ let container = () => html`
     
     <button 
       style="position:fixed;top:1em;left:0"
-      onclick=${() => { pg--; book.seek(pg); paper.draw_book(book) }} >
+      onclick=${() => { pg -= 2; book.seek(pg); paper.draw_book(book) }} >
       prev
     </button>
 
     <button 
     style="position:fixed;top:0;left:0"
-    onclick=${() => { pg++; book.seek(pg); paper.draw_book(book) }} >
+    onclick=${() => { pg += 2; book.seek(pg); paper.draw_book(book) }} >
       next
     </button>
   </div>
