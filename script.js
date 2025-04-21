@@ -4,7 +4,7 @@ import { Q5 as p5 } from "/lib/q5/q5.js"
 
 const isOdd = num => num % 2 == 1;
 let dpi = 150
-let viewport = .42
+let viewport = .38
 let mx = 0, my = 0
 
 const GlobalStyle = `
@@ -702,6 +702,7 @@ class Book {
     _p.background(color)
     if (this.grid) this.spreads[number].draw_grid(_p, [(number * 2), (number * 2) + 1])
     this.spreads[number].draw(_p)
+    if (number == 0) _p.background(200)
     let img = _p.get(0, 0, _p.width / 2, _p.height)
 
     return img
@@ -712,6 +713,7 @@ class Book {
     _p.background(color)
     if (this.grid) this.spreads[number].draw_grid(_p, [(number * 2), (number * 2) + 1])
     this.spreads[number].draw(_p)
+    if (number == this.spreads.length - 1) _p.background(200)
     let img = _p.get(_p.width / 2, 0, _p.width / 2, _p.height)
     return img
   }
@@ -740,14 +742,14 @@ class Book {
     let page = this.current_spread * 2 - 1
     let includes = this.page_is_offset(page)
     let img = this.verso_image(p, this.current_spread)
-    this.draw_img(p, img, 0, includes ? offset_size.px : 0)
+    this.draw_img(p, img, 0, 0)
   }
 
   draw_recto(p) {
     let page = this.current_spread * 2
     let includes = this.page_is_offset(page)
     let img = this.recto_image(p, this.current_spread)
-    this.draw_img(p, img, img.width, includes ? -offset_size.px : 0)
+    this.draw_img(p, img, img.width, 0)
   }
 
   draw_page_set(p, num1, num2) {
@@ -812,12 +814,14 @@ class Paper {
       if (verso_offset) return found
 
       offset_pages.forEach(page => {
-        if (found != -1) return
-        if (
-          !isOdd(page) &&
-          page < verso_page
-        ) {
-          found = page
+        if (!isOdd(page) &&
+          page < verso_page) {
+
+          // if diff is less then 
+          let diff = Math.abs(verso_page - page)
+          let diffAlready = Math.abs(verso_page - found)
+
+          if (diff < diffAlready) found = page
         }
       })
 
@@ -834,12 +838,13 @@ class Paper {
 
       offset_pages.forEach(page => {
         if (found != -1) return
-        if (
-          isOdd(page) &&
-          page > recto_page
-        ) {
-          found = page
-          console.log("found", page)
+        if (isOdd(page) &&
+          page > recto_page) {
+          // if diff is less then 
+          let diff = Math.abs(recto_page - page)
+          let diffAlready = Math.abs(recto_page - found)
+
+          if (diff < diffAlready) found = page
         }
       })
 
@@ -858,7 +863,7 @@ class Paper {
       }
 
       p.image(verso_image, left,
-        verso_offset ? top - (offset_size.px / 2) : top)
+        verso_offset ? top - (offset_size.px) : top)
       p.opacity(1)
     }
 
@@ -874,7 +879,7 @@ class Paper {
       }
 
       p.image(recto_image, left + width.px / 2,
-        recto_offset ? top - (offset_size.px / 2) : top)
+        recto_offset ? top - (offset_size.px) : top)
       p.opacity(1)
     }
 
@@ -955,11 +960,15 @@ function init() {
 
   pages = [
     spread_from_block(0, [graphic()]),
+    spread_from_block(2, [graphic()]),
     spread_from_block(1, [graphic()]),
     spread_from_block(2, [graphic()]),
     spread_from_block(3, [graphic()]),
-    spread_from_block(4, [graphic()]),
     spread_from_block(5, [graphic()]),
+    spread_from_block(3, [graphic()]),
+    spread_from_block(2, [graphic()]),
+    spread_from_block(3, [graphic()]),
+    spread_from_block(4, [graphic()]),
     spread_from_block(5, [graphic()]),
     spread_from_block(5, [graphic()]),
     // spread_from_block(6, [graphic()]),
@@ -982,7 +991,7 @@ oninit.push(() => {
   // for offset
   paper = new Paper(p, s, el, {
     width: s.inch(11),
-    height: s.inch(10),
+    height: s.inch(11.1),
   })
 
   setTimeout(() => {
@@ -1007,6 +1016,7 @@ oninit.push(() => {
   })
 
   book.mark_page_offset(14)
+  book.mark_page_offset(7)
   book.set_page(11)
 })
 
