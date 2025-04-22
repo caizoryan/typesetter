@@ -3,7 +3,7 @@ import { hyphenateSync } from "/lib/hyphenator/hyphenate.js"
 import { Q5 as p5 } from "/lib/q5/q5.js"
 
 const isOdd = num => num % 2 == 1;
-let dpi = 150
+let dpi = 500
 let viewport = .93
 let mx = 0, my = 0
 
@@ -229,14 +229,6 @@ class Scale {
   */
   sub(unit1, unit2) {
     return this.px_raw(unit1.px - unit2.px)
-  }
-
-  /**
-  @param {Unit} unit1 
-  @param {Unit} unit2 
-  */
-  mul(unit1, unit2) {
-    return this.px_raw(unit1.px * unit2.px)
   }
 
   /**
@@ -981,11 +973,12 @@ class Paper {
 
 /**@type {p5}*/
 let p
+let data
 
 
 fetch("./quick.json")
   .then((res) => res.json())
-  //.then((res) => data = res)
+  .then((res) => data = res)
   .then(_ => init())
 
 
@@ -995,7 +988,6 @@ let oninit = []
 /** @type {Paper} */
 let paper
 let pages
-let printing = false
 
 function init() {
   render(container, document.body)
@@ -1007,39 +999,22 @@ oninit.push(() => {
   let el = document.querySelector(".q5")
   p = new p5('instance', el);
 
-  // for export
-  if (printing) {
-    paper = new Paper(p, s, el, {
-      width: s.inch(11),
-      height: s.inch(8.5),
-    }, true)
-  }
+  paper = new Paper(p, s, el, {
+    width: s.inch(11),
+    height: s.inch(8.5),
+  }, true)
+
 
   // for offset
-  else {
-    paper = new Paper(p, s, el, {
-      width: s.inch(11),
-      height: s.add(
-        s.inch(8.5),
-        s.px_raw(offset_size.px * 2)
-      ),
-    })
-  }
+  // paper = new Paper(p, s, el, {
+  //   width: s.inch(11),
+  //   height: s.inch(11.1),
+  // })
 
   setTimeout(() => {
-    paper.draw_book(book)
-    //paper.draw_saddle(book)
+    //paper.draw_book(book)
+    paper.draw_saddle(book)
   }, 100)
-})
-
-/**@type {Book}*/
-let book
-let page = 1
-
-oninit.push(() => {
-  book = new Book(pages)
-  book.mark_page_offset(10)
-  book.set_page(page)
 })
 
 class TextFrame {
@@ -1056,6 +1031,44 @@ class TextFrame {
     draw_paragraph(p, { text: this.text, ...this.props }, prop.structure)
   }
 }
+
+/**@type {Book}*/
+let book
+oninit.push(() => {
+  book = new Book([
+    // x----------------x
+    // Cover page
+    // x----------------x
+    new Spread(grid, s,
+      [
+
+        new TextFrame("QU IC K {B} O-O K?", {
+          x: (grid) => grid.recto_columns()[2].x,
+          y: (grid) => grid.hanglines()[3],
+          ...stylesheet.title,
+          length: s.em(11),
+          height: s.em(28),
+          color: "black",
+          font_family: "Arial Narrow",
+          font_weight: 100,
+        }),
+
+        new TextFrame("QUICK BOOK?", {
+          x: (grid) => grid.recto_columns()[0].x,
+          y: (grid) => grid.hanglines()[4],
+          height: s.em(8),
+          length: s.em(18),
+          ...stylesheet.title,
+        }),
+      ]),
+
+    ...pages
+  ])
+
+  book.mark_page_offset(10)
+  //book.mark_page_offset(7)
+  book.set_page(1)
+})
 
 let saddle = sig(false)
 let drawpaper = () => saddle() ?
@@ -1130,159 +1143,19 @@ let stylesheet = {
   }
 }
 
-let style = {
-  title: [
-    ["font_family", "GapSansBlack"],
-    ["length", ["column_width", 4]],
-    ["font_size", ["point", 28]],
-    ["leading", ["point", 48]],
-    ["color", "#0000ff"],
-  ]
-}
-
-let longerText = `
-This text can go on for much longer and I can see what all can be typed in here. Let's see how this looks basically.
-`
-
-let cover = {
-  title: "",
-  content: [
-    ["Header",
-      ["text", "Structure of the Book"],
-      ["height", ["em", 18]],
-      ["x", ["recto", 2, "x"]],
-      ["y", ["hangline", 3]],
-      ...style.title
-    ]
-  ]
-}
-
-let spread_1 = {
-  title: "hello",
-  content: [
-    ["Header",
-      ["text", "Hello world"],
-      ["x", ["verso", 2, "x"]],
-      ["y", ["hangline", 4]],
-      ["font_size", ["point", 38]]
-    ],
-
-    ["TextFrame",
-      ["font_size", ["point", 9]],
-      ["text", longerText],
-      ["font_family", "Arial Narrow"],
-      ["x", ["verso", 2, "x"]],
-      ["y", ["hangline", 4]],
-      ["length", ["em", 12]],
-    ],
-  ]
-}
-
-let data = {
-  contents: [
-    cover,
-    spread_1,
-    spread_1,
-  ]
-}
-
-// x-----------------------x
-// *Header: Instruction sheet
-// x-----------------------x
-//
-// ["recto", 2, "x"]
-// ["verso", 2, "x"]
-let process_verso = (prop) => (grid) => grid.verso_columns()[prop[1]][prop[2]]
-let process_recto = (prop) => (grid) => grid.recto_columns()[prop[1]][prop[2]]
-let process_column_width = (prop) => (grid) => grid.column_width(prop[1])
-
-// ["hangline", 2]
-let process_hangline = (prop) => (grid) => grid.hanglines()[prop[1]]
-
-// ["em", 2]
-let process_em = (prop) => s.em(prop[1])
-let process_inch = (prop) => s.inch(prop[1])
-let process_point = (prop) => s.point(prop[1])
-let process_px = (prop) => s.px(prop[1])
-let process_pica = (prop) => s.pica(prop[1])
-
-let process_add = (prop) => s.add(prop[1], prop[2])
-let process_mul = (prop) => s.mul(prop[1], prop[2])
-let process_sub = (prop) => s.sub(prop[1], prop[2])
-let process_div = (prop) => s.div(prop[1], prop)
 
 // x-----------------------x
 // *Header: Spread from block
 // x-----------------------x
 //
 /**
- * @typedef {("Header" | "Rect" | "Body")} ContentType
- * @typedef {(ContentType | Property)[]} Content
- * @typedef {[string, (number | string | Property)]} Property
- *
  * @param {{
- *  content: Content,
+ *  content: string,
  *  title: string,
  * }} block 
+ *
  * */
 function spread_from_block(block, extensions = []) {
-  /**
-   * @param {(any[] | number | string)} property
-   */
-  let process_property = (property) => {
-    if (typeof property == "number") return property
-    if (typeof property == "string") return property
-
-    if (Array.isArray(property)) {
-      if (property[0] == "hangline") return process_hangline(property)
-      if (property[0] == "verso") return process_verso(property)
-      if (property[0] == "recto") return process_recto(property)
-      if (property[0] == "column_width") return process_column_width(property)
-
-      // units
-      if (property[0] == "em") return process_em(property)
-      if (property[0] == "inch") return process_inch(property)
-      if (property[0] == "px") return process_px(property)
-      if (property[0] == "pica") return process_pica(property)
-      if (property[0] == "point") return process_point(property)
-
-      // math
-      if (property[0] == "add") return process_add(property)
-      if (property[0] == "sub") return process_sub(property)
-      if (property[0] == "mul") return process_mul(property)
-      if (property[0] == "div") return process_div(property)
-    }
-  }
-
-  let reduceprops = (props) => props.reduce((acc, tuple) => {
-    let key = tuple[0]
-    let value = tuple[1]
-    acc[key] = process_property(value)
-    return acc
-  }, {})
-
-
-  /**
-   * @param {Property[]} props
-   * */
-  let process_header = (props) => {
-    let p = reduceprops(props)
-    return Header(p["text"] ? p["text"] : "", p)
-  }
-
-  /**
-   * @param {Property[]} props
-   * */
-  let process_textframe = (props) => {
-    let p = reduceprops(props)
-    return new TextFrame(p["text"] ? p["text"] : "", p)
-  }
-
-  let contents = block.content.map((item) => {
-    if (item[0] == "Header") return process_header(item.slice(1))
-    if (item[0] == "TextFrame") return process_textframe(item.slice(1))
-  })
-
   let through_title = Header(block.title, {
     x: (grid) => grid.verso_columns()[0].x,
     y: (grid) =>
@@ -1310,9 +1183,7 @@ function spread_from_block(block, extensions = []) {
 
   through.set_text(block.content)
 
-  return new Spread(grid, s, [
-    //through, through_title,
-    ...contents, ...extensions])
+  return new Spread(grid, s, [through, through_title, ...extensions])
 }
 
 const graphic = () => {
