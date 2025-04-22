@@ -522,7 +522,9 @@ class Spread {
     p.textSize(this.s.point(9).px)
     p.textFont("monospace")
     p.textWeight(600)
-    p.text("[ PAGE " + (no[0]) + " ]", this.structure.verso_columns()[0].x.px, this.s.em(3).px)
+    p.text("[ PAGE " + (no[0]) + " ]",
+      this.structure.verso_columns()[0].x.px,
+      this.structure.recto_columns()[3].y.px)
     p.text("[ PAGE " + (no[1]) + " ]",
       this.structure.recto_columns()[0].x.px,
       this.structure.recto_columns()[3].y.px)
@@ -1201,7 +1203,7 @@ let the_grid = {
       [
         ["text", ""],
         ["x", ["verso", 0, "x"]],
-        ["y", ["hangline", 4]],
+        ["y", ["em", 15]],
         ["height", ["em", 6]],
         ["length", ["em", 12]],
         ...style.body
@@ -1210,8 +1212,8 @@ let the_grid = {
       [
         ["text", ""],
         ["x", ["verso", 4, "x"]],
-        ["y", ["hangline", 4]],
-        ["height", ["em", 6]],
+        ["y", ["hangline", 5]],
+        ["height", ["em", 8]],
         ["length", ["em", 12]],
         ...style.body
       ],
