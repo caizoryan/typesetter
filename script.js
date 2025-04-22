@@ -63,22 +63,49 @@ function draw_line(p, text, x, y, length, state, hooks) {
   }
 
   let try_hyphenation = (word) => {
+    if (word.includes("-")) return false
     let hyphenated = hyphenateSync(word, {
       hyphenChar: "---((---))---"
     }).split("---((---))---")
 
     // try to put first of hyphenated in...
-    let lexeme = hyphenated.shift()
-    let word_len = p.textWidth(lexeme)
-
-    if (line_state.horizontal_pos + word_len < length.px) {
-      let _fill = p.ctx.fillStyle
-      // hook to change color of hyphenated
-      p.fill(p.color("red"))
-      p.text(lexeme + "-", x.px + line_state.horizontal_pos, y.px)
-      p.fill(_fill)
-      return hyphenated.join("")
+    /**@type {number[]}*/
+    let sizes = hyphenated.map(e => p.textWidth(e))
+    let already = line_state.horizontal_pos
+    //let lexeme = hyphenated.shift()
+    let condition = () => {
+      let cur_size = sizes
+        .slice(0, count + 1)
+        .reduce((sum, a) => sum += a, 0)
+      console.log("calc size", count, hyphenated, cur_size)
+      return already + cur_size < length.px
     }
+
+    let count = 0
+    while (condition()) { count++ }
+
+    //let word_len = p.textWidth(lexeme)
+
+    if (count == 0) return false
+    else {
+      let remainder = hyphenated.slice(count).join("")
+      let word = hyphenated.slice(0, count).join("")
+      //let _fill = p.ctx.fillStyle
+      //p.fill(p.color("red"))
+      p.text(word + "-", x.px + line_state.horizontal_pos, y.px)
+      //p.fill(_fill)
+      return remainder
+    }
+
+    // if (line_state.horizontal_pos + word_len < length.px) {
+    //   let _fill = p.ctx.fillStyle
+    //   // hook to change color of hyphenated
+    //   p.fill(p.color("red"))
+    //   p.text(lexeme + "-",
+    //     x.px + line_state.horizontal_pos, y.px)
+    //   p.fill(_fill)
+    //   return hyphenated.join("")
+    // }
 
     return false
   }
@@ -1184,6 +1211,16 @@ let the_grid = {
       return ["Circle",
         ["x", ["verso", 3, "x"]],
         ["y", ["em", 4 + i * 1]],
+        ["radius", ["em", 1 - (i / 18)]],
+        ["stroke", "black"]
+      ]
+    }),
+
+    // Circles
+    ...Array(7).fill(0).map((e, i) => {
+      return ["Circle",
+        ["x", ["verso", 3, "x"]],
+        ["y", ["em", 18 + i * 1.5]],
         ["radius", ["em", 1]],
         ["stroke", "black"]
       ]
@@ -1219,17 +1256,200 @@ let the_grid = {
       ],
     ],
 
-    ...["HANGLINE", "COLUMN", "UNIT"].map((e, i) => {
-      return ["TextFrame",
-        ["text", e],
-        ["x", ["recto", i * 3, "x"]],
-        ["y", ["em", 6]],
-        ["height", ["em", 3]],
-        ["length", ["column_width", 3]],
-        ["rect", false],
-        ...style.label
+    ...["HANGLINE", "COLUMN", "UNIT"]
+      .map((e, i) =>
+        ["TextFrame",
+          ["text", e],
+          ["x", ["recto", i * 3, "x"]],
+          ["y", ["hangline", 1]],
+          ["height", ["em", 3]],
+          ["length", ["column_width", 3]],
+          ["rect", false],
+          ...style.label
+        ]
+      ),
+
+    ...[
+      `[UNIT]
+  manages conversion from units such as EMS, PICAS, POINTS, INCHES to pixel values. The values change based on viewport (zoom) size and DPI. 
+  
+  `,
+      `[Hangline]
+  helps place elements veritcally, it is set independantly of other grid attributes. It only requires a Y-axis value, which will be used to draw line from 0 to width on given y-value`,
+
+      `[Columns]
+  are calculated based on the inside and outside margin and the gutter. Total area for the grid can be calculated by subtracting margins from page size. This area is subtracted by total gutters (cols - 1) times gutter size. And the remaining area is divided by total columns`,]
+      .map((e, i) =>
+        ["TextFrame",
+          ["text", e],
+          ["x", ["recto", 2, "x"]],
+          ["y", ["em", 12 + i * 5]],
+          ["height", ["em", 12]],
+          ["length", ["column_width", 6]],
+          ["rect", false],
+          ...style.body,
+          ["color", "#444"],
+          ["font_weight", "600"]
+        ]
+      )
+  ]
+}
+
+let label_each = {
+  title: "describes grid",
+  content: [
+    ["Header",
+      ["text", "Hanglines"],
+      ["x", ["verso", 2, "x"]],
+      ["y", ["hangline", 5]],
+      ["length", ["column_width", 4]],
+      ["height", ["em", 12]],
+    ],
+
+    ["Header",
+      ["text", "Columns"],
+      ["x", ["recto", 2, "x"]],
+      ["y", ["hangline", 5]],
+      ["length", ["column_width", 4]],
+      ["height", ["em", 12]],
+    ],
+
+    // Circles
+    ...Array(12).fill(0).map((e, i) => {
+      return ["Circle",
+        ["x", ["verso", 3, "x"]],
+        ["y", ["em", 18 + i * 1.5]],
+        ["radius", ["em", 1]],
+        ["stroke", "black"]
       ]
-    })
+    }),
+
+    // Fun Arc
+    ...Array(8).fill(0).map((e, i) =>
+      ["Arc",
+        ["x", ["verso", i, "x"]],
+        ["y", ["hangline", i]],
+        ["radius", ["em", 2 + i * .5]],
+        ["start", -i * 15],
+        ["stop", 90],
+        ["stroke", "#ff00ff"]
+      ]),
+
+
+    ...grid.hanglines()
+      .map((e, i) =>
+        ["TextFrame",
+          ["text", "hangline --- " + e.value + " " + e.unit + ", " + e.px + " px"],
+          ["x", ["verso", 3, "x"]],
+          ["y", [e.unit, e.value]],
+          ["height", ["em", 3]],
+          ["length", ["column_width", 4]],
+          ["rect", false],
+          //...style.label
+        ]
+      ),
+
+    ...grid.recto_columns()
+      .map((e, i) =>
+        ["TextFrame",
+          ["text", "X --- " + e.x.value.toFixed(1) + " " + e.x.unit],
+          ["x", ["recto", i, "x"]],
+          ["y", [e.y.unit, e.y.value * (12 - (i))]],
+          ["height", ["em", 3]],
+          ["length", ["column_width", 1]],
+          ["rect", false],
+          //...style.label
+        ]
+      ),
+
+    ...grid.recto_columns()
+      .map((e, i) =>
+        ["TextFrame",
+          ["text", "Y --- " + e.y.value.toFixed(1) + " " + e.y.unit],
+          ["x", ["recto", i, "x"]],
+          ["y", [e.y.unit, e.y.value * (14 - (i))]],
+          ["height", ["em", 3]],
+          ["length", ["column_width", 1]],
+          ["rect", false],
+          //...style.label
+        ]
+      ),
+
+  ]
+}
+
+let margin = {
+  title: "describes grid",
+  content: [
+    ["Header",
+      ["text", "Margin"],
+      ["x", ["verso", 2, "x"]],
+      ["y", ["hangline", 5]],
+      ["length", ["column_width", 4]],
+      ["height", ["em", 12]],
+    ],
+
+    // Circles
+    ...Array(12).fill(0).map((e, i) => {
+      return ["Circle",
+        ["x", ["verso", 3, "x"]],
+        ["y", ["em", 18 + i * 1.5]],
+        ["radius", ["em", 1]],
+        ["stroke", "black"]
+      ]
+    }),
+
+    // Fun Arc
+    ...Array(8).fill(0).map((e, i) =>
+      ["Arc",
+        ["x", ["verso", i, "x"]],
+        ["y", ["hangline", i]],
+        ["radius", ["em", 2 + i * 1.5]],
+        ["start", -i * 12],
+        ["stop", 110],
+        ["stroke", "#ff00ff"]
+      ]),
+
+
+    ...grid.hanglines()
+      .map((e, i) =>
+        ["TextFrame",
+          ["text", "hangline --- " + e.value + " " + e.unit + ", " + e.px + " px"],
+          ["x", ["verso", 3, "x"]],
+          ["y", [e.unit, e.value]],
+          ["height", ["em", 3]],
+          ["length", ["column_width", 4]],
+          ["rect", false],
+          //...style.label
+        ]
+      ),
+
+    ...grid.recto_columns()
+      .map((e, i) =>
+        ["TextFrame",
+          ["text", "X --- " + e.x.value.toFixed(1) + " " + e.x.unit],
+          ["x", ["recto", i, "x"]],
+          ["y", [e.y.unit, e.y.value * (12 - (i))]],
+          ["height", ["em", 3]],
+          ["length", ["column_width", 1]],
+          ["rect", false],
+          //...style.label
+        ]
+      ),
+
+    ...grid.recto_columns()
+      .map((e, i) =>
+        ["TextFrame",
+          ["text", "Y --- " + e.y.value.toFixed(1) + " " + e.y.unit],
+          ["x", ["recto", i, "x"]],
+          ["y", [e.y.unit, e.y.value * (14 - (i))]],
+          ["height", ["em", 3]],
+          ["length", ["column_width", 1]],
+          ["rect", false],
+          //...style.label
+        ]
+      ),
+
   ]
 }
 
@@ -1238,7 +1458,7 @@ let empty = {
   content: []
 }
 
-page = 2
+page = 6
 
 // x-----------------------x
 // *Header: Data
@@ -1247,8 +1467,8 @@ let data = {
   contents: [
     cover,
     the_grid,
-    empty,
-    empty,
+    label_each,
+    margin,
     empty,
   ]
 }
