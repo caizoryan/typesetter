@@ -3,7 +3,7 @@ import { hyphenateSync } from "/lib/hyphenator/hyphenate.js"
 import { Q5 as p5 } from "/lib/q5/q5.js"
 
 const isOdd = num => num % 2 == 1;
-let dpi = 200
+let dpi = 350
 let viewport = .93
 let mx = 0, my = 0
 
@@ -1019,7 +1019,7 @@ let oninit = []
 /** @type {Paper} */
 let paper
 let pages
-let printing = false
+let printing = true
 
 function init() {
   render(container, document.body)
