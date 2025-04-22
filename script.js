@@ -179,6 +179,7 @@ function draw_paragraph(p, paragraph, grid) {
 
   if (_paragraph.rect) {
     p.noFill();
+    p.strokeWeight(.5)
     p.stroke(_paragraph.stroke);
     p.rect(_paragraph.x.px, _paragraph.y.px, _paragraph.length.px, _paragraph.height.px);
   }
@@ -233,10 +234,10 @@ class Scale {
 
   /**
   @param {Unit} unit1 
-  @param {Unit} unit2 
+  @param {number} unit2 
   */
   mul(unit1, unit2) {
-    return this.px_raw(unit1.px * unit2.px)
+    return this.px_raw(unit1.px * unit2)
   }
 
   /**
@@ -316,11 +317,9 @@ class Scale {
       px: this.pica(value).px / 12
     }
   }
-
 }
 
 let s = new Scale(dpi)
-
 class LinkedFrame {
   /**
   @param {ParagraphProps[]} [frames=[]] 
@@ -364,7 +363,6 @@ class LinkedFrame {
     return text
   }
 }
-
 
 /** 
 @typedef {{
@@ -457,10 +455,14 @@ class Grid {
   }
 }
 
+let offset_size = s.em(12)
 let grid = new Grid({
+  page_width: s.inch(10),
+  page_height: s.inch(5),
+
   margin: {
-    top: s.em(12),
-    bottom: s.em(4),
+    top: s.em(2),
+    bottom: s.em(3),
     inside: s.em(1),
     outside: s.em(4),
   },
@@ -468,22 +470,16 @@ let grid = new Grid({
   columns: 8,
   gutter: s.point(6),
   hanglines: [
+    s.em(6),
+    s.em(6.5),
     s.em(12),
     s.em(12.5),
     s.em(18),
     s.em(18.5),
     s.em(24),
     s.em(24.5),
-    s.em(30),
-    s.em(30.5),
-    s.em(36),
-    s.em(36.5),
   ],
-  page_width: s.inch(10),
-  page_height: s.inch(8),
 }, s)
-
-
 
 /**
 @typedef Drawable
@@ -569,7 +565,6 @@ class Spread {
   add_graphic() { }
 }
 
-let offset_size = s.em(6)
 class Book {
   /**
   @param {Spread[]} [spreads=[]] 
@@ -887,10 +882,10 @@ class Paper {
 
       if (verso_offset && draw_behind) {
         draw_verso(graphic, spread - 1)
-        p.opacity(.8)
+        p.opacity(.95)
       }
 
-      p.image(verso_image, left, verso_offset ? top - (offset_size.px) : top, verso_image.width, verso_image.height)
+      p.image(verso_image, left, verso_offset ? top + (offset_size.px * offset_direction) : top, verso_image.width, verso_image.height)
       p.opacity(1)
     }
 
@@ -905,7 +900,7 @@ class Paper {
         p.opacity(.8)
       }
 
-      p.image(recto_image, left + width.px / 2, recto_offset ? top - (offset_size.px) : top, recto_image.width, recto_image.height)
+      p.image(recto_image, left + width.px / 2, recto_offset ? top + (offset_size.px * offset_direction) : top, recto_image.width, recto_image.height)
       p.opacity(1)
     }
 
@@ -999,7 +994,7 @@ let printing = false
 
 function init() {
   render(container, document.body)
-  pages = data.contents.map((e) => spread_from_block(e, [graphic()]))
+  pages = data.contents.map((e) => spread_from_block(e, []))
   oninit.forEach(fn => typeof fn == "function" ? fn() : null)
 }
 
@@ -1020,8 +1015,8 @@ oninit.push(() => {
     paper = new Paper(p, s, el, {
       width: s.inch(11),
       height: s.add(
-        s.inch(8.5),
-        s.px_raw(offset_size.px * 2)
+        grid.props.page_height,
+        s.px_raw(offset_size.px * 2.5)
       ),
     })
   }
@@ -1032,13 +1027,19 @@ oninit.push(() => {
   }, 100)
 })
 
+// x--------------------x
+// *Header: Book
+// x--------------------x
+//
 /**@type {Book}*/
 let book
 let page = 1
+let offsets = [3]
+let offset_direction = -1
 
 oninit.push(() => {
   book = new Book(pages)
-  book.mark_page_offset(10)
+  offsets.forEach((e) => book.mark_page_offset(e))
   book.set_page(page)
 })
 
@@ -1106,83 +1107,147 @@ let container = () => html`
   </div>
 `
 
-
-/**@type {{
-  body: ParagraphProps
-  title: ParagraphProps
-}}*/
-let stylesheet = {
-  title: {
-    font_family: "GapSansBlack",
-    length: (grid) => grid.column_width(8),
-    font_size: s.point(38),
-    leading: s.point(48),
-    color: "#0000ff",
-  },
-  body: {
-    text: "",
-    leading: s.point(12),
-    length: (grid) => grid.column_width(5),
-    height: s.em(8),
-    font_size: s.point(8),
-    font_family: "ABC Oracle Variable Unlicensed Trial",
-    font_weight: 600,
-  }
-}
-
 let style = {
   title: [
     ["font_family", "GapSansBlack"],
-    ["length", ["column_width", 4]],
+    ["length", ["column_width", 7]],
     ["font_size", ["point", 28]],
-    ["leading", ["point", 48]],
+    ["leading", ["point", 38]],
     ["color", "#0000ff"],
+  ],
+
+  body: [
+    ["font_family", "Arial Narrow"],
+    ["font_size", ["point", 9]],
+    ["leading", ["point", 12]],
+    ["font_weight", 100],
+    ["color", "black"],
+  ],
+
+  label: [
+    ["font_family", "GapSansBold"],
+    ["font_size", ["point", 18]],
+    ["leading", ["point", 12]],
+    ["color", "#ff00ff"],
   ]
 }
 
-let longerText = `
-This text can go on for much longer and I can see what all can be typed in here. Let's see how this looks basically.
-`
+let gridsystem_description = `The grid is a tool that sections out space, so that it can be made legible to a system. Working in an explicit environment where interaction with the composition happens declaratively (rather than moving stuff with a mouse), the grid renders pixel values legible and meaningful. In other words, the grid provides an easier and more meaningful access to the space. 
+
+For instance, elements can be positioned and sized according to columns and/or hanglines.`
 
 let cover = {
   title: "",
   content: [
     ["Header",
       ["text", "Structure of the Book"],
-      ["height", ["em", 18]],
+      ["height", ["em", 12]],
+      ["x", ["recto", 0, "x"]],
+      ["y", ["hangline", 3]],
+    ],
+
+    ["TextFrame",
+      ["text", "This booklet describes the structure of its making."],
+      ["length", ["column_width", 4]],
+      ["height", ["em", 12]],
       ["x", ["recto", 2, "x"]],
       ["y", ["hangline", 3]],
-      ...style.title
+      ...style.body
     ]
   ]
 }
 
-let spread_1 = {
-  title: "hello",
+let the_grid = {
+  title: "describes grid",
   content: [
     ["Header",
-      ["text", "Hello world"],
+      ["text", "GRID {system}"],
       ["x", ["verso", 2, "x"]],
-      ["y", ["hangline", 4]],
-      ["font_size", ["point", 38]]
+      ["y", ["hangline", 0]],
+      ["length", ["column_width", 4]],
+      ["height", ["em", 12]],
     ],
 
-    ["TextFrame",
-      ["font_size", ["point", 9]],
-      ["text", longerText],
-      ["font_family", "Arial Narrow"],
-      ["x", ["verso", 2, "x"]],
-      ["y", ["hangline", 4]],
+    // Translucent Rect
+    ["Rect",
+      ["x", ["verso", 1, "x"]],
+      ["y", ["em", 10]],
+      ["height", ["em", 18]],
       ["length", ["em", 12]],
+      ["fill", "#22222222"],
     ],
+
+    // Circles
+    ...Array(12).fill(0).map((e, i) => {
+      return ["Circle",
+        ["x", ["verso", 3, "x"]],
+        ["y", ["em", 4 + i * 1]],
+        ["radius", ["em", 1]],
+        ["stroke", "black"]
+      ]
+    }),
+
+    // Fun Arc
+    ["Arc",
+      ["x", ["verso", 2, "x"]],
+      ["y", ["hangline", 1]],
+      ["radius", ["em", 15]],
+      ["stroke", "black"]
+    ],
+
+    // Description text
+    ["LinkedFrame",
+      gridsystem_description,
+      [
+        ["text", ""],
+        ["x", ["verso", 0, "x"]],
+        ["y", ["hangline", 4]],
+        ["height", ["em", 6]],
+        ["length", ["em", 12]],
+        ...style.body
+      ],
+
+      [
+        ["text", ""],
+        ["x", ["verso", 4, "x"]],
+        ["y", ["hangline", 4]],
+        ["height", ["em", 6]],
+        ["length", ["em", 12]],
+        ...style.body
+      ],
+    ],
+
+    ...["HANGLINE", "COLUMN", "UNIT"].map((e, i) => {
+      return ["TextFrame",
+        ["text", e],
+        ["x", ["recto", i * 3, "x"]],
+        ["y", ["em", 6]],
+        ["height", ["em", 3]],
+        ["length", ["column_width", 3]],
+        ["rect", false],
+        ...style.label
+      ]
+    })
   ]
 }
 
+let empty = {
+  title: "describes grid",
+  content: []
+}
+
+page = 2
+
+// x-----------------------x
+// *Header: Data
+// x-----------------------x
 let data = {
   contents: [
     cover,
-    spread_1,
-    spread_1,
+    the_grid,
+    empty,
+    empty,
+    empty,
   ]
 }
 
@@ -1192,8 +1257,18 @@ let data = {
 //
 // ["recto", 2, "x"]
 // ["verso", 2, "x"]
-let process_verso = (prop) => (grid) => grid.verso_columns()[prop[1]][prop[2]]
-let process_recto = (prop) => (grid) => grid.recto_columns()[prop[1]][prop[2]]
+let process_verso = (prop) => (grid) => {
+  let index = Math.floor(prop[1])
+  let diff = prop[1] - index
+  let offset = s.mul(grid.column_width(1), diff)
+  return s.add(grid.verso_columns()[index][prop[2]], offset)
+}
+let process_recto = (prop) => (grid) => {
+  let index = Math.floor(prop[1])
+  let diff = prop[1] - index
+  let offset = s.mul(grid.column_width(1), diff)
+  return s.add(grid.recto_columns()[index][prop[2]], offset)
+}
 let process_column_width = (prop) => (grid) => grid.column_width(prop[1])
 
 // ["hangline", 2]
@@ -1211,6 +1286,41 @@ let process_mul = (prop) => s.mul(prop[1], prop[2])
 let process_sub = (prop) => s.sub(prop[1], prop[2])
 let process_div = (prop) => s.div(prop[1], prop)
 
+/**
+ * @param {(any[] | number | string)} property
+ */
+let process_property = (property) => {
+  if (Array.isArray(property)) {
+    if (property[0] == "hangline") return process_hangline(property)
+    if (property[0] == "verso") return process_verso(property)
+    if (property[0] == "recto") return process_recto(property)
+    if (property[0] == "column_width") return process_column_width(property)
+
+    // units
+    if (property[0] == "em") return process_em(property)
+    if (property[0] == "inch") return process_inch(property)
+    if (property[0] == "px") return process_px(property)
+    if (property[0] == "pica") return process_pica(property)
+    if (property[0] == "point") return process_point(property)
+
+    // math
+    if (property[0] == "add") return process_add(property)
+    if (property[0] == "sub") return process_sub(property)
+    if (property[0] == "mul") return process_mul(property)
+    if (property[0] == "div") return process_div(property)
+  }
+
+  else return property
+}
+
+let reduceprops = (props) => props.reduce((acc, tuple) => {
+  let key = tuple[0]
+  let value = tuple[1]
+  acc[key] = process_property(value)
+  return acc
+}, {})
+
+
 // x-----------------------x
 // *Header: Spread from block
 // x-----------------------x
@@ -1227,42 +1337,6 @@ let process_div = (prop) => s.div(prop[1], prop)
  * */
 function spread_from_block(block, extensions = []) {
   /**
-   * @param {(any[] | number | string)} property
-   */
-  let process_property = (property) => {
-    if (typeof property == "number") return property
-    if (typeof property == "string") return property
-
-    if (Array.isArray(property)) {
-      if (property[0] == "hangline") return process_hangline(property)
-      if (property[0] == "verso") return process_verso(property)
-      if (property[0] == "recto") return process_recto(property)
-      if (property[0] == "column_width") return process_column_width(property)
-
-      // units
-      if (property[0] == "em") return process_em(property)
-      if (property[0] == "inch") return process_inch(property)
-      if (property[0] == "px") return process_px(property)
-      if (property[0] == "pica") return process_pica(property)
-      if (property[0] == "point") return process_point(property)
-
-      // math
-      if (property[0] == "add") return process_add(property)
-      if (property[0] == "sub") return process_sub(property)
-      if (property[0] == "mul") return process_mul(property)
-      if (property[0] == "div") return process_div(property)
-    }
-  }
-
-  let reduceprops = (props) => props.reduce((acc, tuple) => {
-    let key = tuple[0]
-    let value = tuple[1]
-    acc[key] = process_property(value)
-    return acc
-  }, {})
-
-
-  /**
    * @param {Property[]} props
    * */
   let process_header = (props) => {
@@ -1278,41 +1352,75 @@ function spread_from_block(block, extensions = []) {
     return new TextFrame(p["text"] ? p["text"] : "", p)
   }
 
+  /**
+   * @param {Property[]} props
+   * */
+  let process_linked = (props) => {
+    let tframes = props.slice(1).map(e => reduceprops(e))
+    return new LinkedFrame(props[0], tframes)
+  }
+
   let contents = block.content.map((item) => {
     if (item[0] == "Header") return process_header(item.slice(1))
     if (item[0] == "TextFrame") return process_textframe(item.slice(1))
+    if (item[0] == "LinkedFrame") return process_linked(item.slice(1))
+    if (item[0] == "Rect") return rect(reduceprops(item.slice(1)))
+    if (item[0] == "Circle") return circle(reduceprops(item.slice(1)))
+    if (item[0] == "Arc") return arc(reduceprops(item.slice(1)))
   })
 
-  let through_title = Header(block.title, {
-    x: (grid) => grid.verso_columns()[0].x,
-    y: (grid) =>
-      s.add(
-        grid.verso_columns()[0].y,
-        s.px_raw(grid.column_width(3).px)
-      ),
-  })
 
-  let through = new LinkedFrame("Hewl")
-  through.add({
-    ...stylesheet.body,
-    text: "",
-    x: (grid) => grid.verso_columns()[1].x,
-    y: (grid) => s.add(grid.verso_columns()[0].y, s.em(4)),
-    height: s.em(21)
-  })
+  return new Spread(grid, s, [...contents, ...extensions])
+}
 
-  through.add({
-    ...stylesheet.body,
-    text: "",
-    x: (grid) => grid.recto_columns()[1].x,
-    y: (grid) => s.add(grid.recto_columns()[0].y, s.em(4)),
-  })
+const rect = ({ x, y, length, height, fill, stroke, strokeWeight }) => {
+  console.log({ x, y, length, height, fill, stroke, strokeWeight })
+  return {
+    draw: (p, props) => {
+      fill ? p.fill(fill) : p.noFill()
+      stroke ? p.stroke(stroke) : p.noStroke()
+      strokeWeight ? p.strokeWeight(strokeWeight) : null
 
-  through.set_text(block.content)
+      if (typeof x == "function") x = x(props.structure)
+      if (typeof y == "function") y = y(props.structure)
+      if (typeof length == "function") length = length(props.structure)
+      if (typeof height == "function") height = height(props.structure)
 
-  return new Spread(grid, s, [
-    //through, through_title,
-    ...contents, ...extensions])
+      p.rect(x.px, y.px, length.px, height.px)
+    }
+  }
+}
+
+const circle = ({ x, y, radius, fill, stroke, strokeWeight }) => {
+  return {
+    draw: (p, props) => {
+      fill ? p.fill(fill) : p.noFill()
+      stroke ? p.stroke(stroke) : p.noStroke()
+      strokeWeight ? p.strokeWeight(strokeWeight) : null
+
+      if (typeof x == "function") x = x(props.structure)
+      if (typeof y == "function") y = y(props.structure)
+      if (typeof radius == "function") radius = radius(props.structure)
+
+      p.circle(x.px, y.px, radius.px)
+    }
+  }
+}
+
+const arc = ({ x, y, radius, start = 0, stop = 180, fill, stroke, strokeWeight }) => {
+  return {
+    draw: (p, props) => {
+      fill ? p.fill(fill) : p.noFill()
+      stroke ? p.stroke(stroke) : p.noStroke()
+      strokeWeight ? p.strokeWeight(strokeWeight) : null
+
+      if (typeof x == "function") x = x(props.structure)
+      if (typeof y == "function") y = y(props.structure)
+      if (typeof radius == "function") radius = radius(props.structure)
+
+      p.arc(x.px, y.px, radius.px, radius.px, start, stop)
+    }
+  }
 }
 
 const graphic = () => {
@@ -1346,22 +1454,16 @@ const graphic = () => {
 
 function Header(text, para) {
   text = decodeHTML(text)
+  let propies = reduceprops(style.title)
   /**@type {Drawable}*/
   let drawable = {
     draw: (p, props) => draw_paragraph(p, {
-      font_family: "GapSansBold",
       text: text,
-
       color: "blue",
-
       rect: true,
       hyphenate: false,
 
-      length: s.em(23.5),
-      height: s.em(11.5),
-
-      leading: s.point(38),
-      font_size: s.point(32),
+      ...propies,
       ...para
     }, props.structure)
   }
