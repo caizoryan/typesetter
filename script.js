@@ -3,7 +3,7 @@ import { hyphenateSync } from "/lib/hyphenator/hyphenate.js"
 import { Q5 as p5 } from "/lib/q5/q5.js"
 
 const isOdd = num => num % 2 == 1;
-let dpi = 150
+let dpi = 200
 let viewport = .93
 let mx = 0, my = 0
 
@@ -1083,7 +1083,7 @@ class TextFrame {
   }
 
   draw(p, prop) {
-    draw_paragraph(p, { text: this.text, ...this.props }, prop.structure)
+    draw_paragraph(p, { text: this.text, font_size: s.point(7), ...this.props }, prop.structure)
   }
 }
 
@@ -1339,7 +1339,13 @@ let label_each = {
     ...grid.hanglines()
       .map((e, i) =>
         ["TextFrame",
-          ["text", "hangline --- " + e.value + " " + e.unit + ", " + e.px + " px"],
+          ["text", "hangline --- "
+            + e.value.toFixed(1)
+            + " "
+            + e.unit
+            + ", "
+            + e.px.toFixed(1)
+            + " px"],
           ["x", ["verso", 3, "x"]],
           ["y", [e.unit, e.value]],
           ["height", ["em", 3]],
@@ -1352,7 +1358,9 @@ let label_each = {
     ...grid.recto_columns()
       .map((e, i) =>
         ["TextFrame",
-          ["text", "X --- " + e.x.value.toFixed(1) + " " + e.x.unit],
+          ["text", "X --- "
+            + e.x.value.toFixed(1)
+            + " " + e.x.unit],
           ["x", ["recto", i, "x"]],
           ["y", [e.y.unit, e.y.value * (12 - (i))]],
           ["height", ["em", 3]],
@@ -1374,6 +1382,7 @@ let label_each = {
           //...style.label
         ]
       ),
+
 
   ]
 }
@@ -1410,13 +1419,32 @@ let margin = {
         ["stroke", "#ff00ff"]
       ]),
 
+    // Fun Arc
+    ...Array(6).fill(0).map((e, i) =>
+      ["Arc",
+        ["x", ["recto", i, "x"]],
+        ["y", ["hangline", 6 - i]],
+        ["radius", ["em", 2 + i * 2.5]],
+        ["start", -i * 15],
+        ["stop", 110],
+        ["stroke", "#ff00ff"]
+      ]),
 
-    ...grid.hanglines()
+
+    ...Object.entries(grid.props.margin)
       .map((e, i) =>
         ["TextFrame",
-          ["text", "hangline --- " + e.value + " " + e.unit + ", " + e.px + " px"],
+          ["text",
+            e[0]
+            + "--- "
+            + e[1].value.toFixed(1)
+            + " "
+            + e[1].unit
+            + ", "
+            + e[1].px.toFixed(1)
+            + " px"],
           ["x", ["verso", 3, "x"]],
-          ["y", [e.unit, e.value]],
+          ["y", ["em", 6 * (i + 1)]],
           ["height", ["em", 3]],
           ["length", ["column_width", 4]],
           ["rect", false],
@@ -1424,31 +1452,53 @@ let margin = {
         ]
       ),
 
-    ...grid.recto_columns()
-      .map((e, i) =>
-        ["TextFrame",
-          ["text", "X --- " + e.x.value.toFixed(1) + " " + e.x.unit],
-          ["x", ["recto", i, "x"]],
-          ["y", [e.y.unit, e.y.value * (12 - (i))]],
-          ["height", ["em", 3]],
-          ["length", ["column_width", 1]],
-          ["rect", false],
-          //...style.label
-        ]
-      ),
+    ["Rect",
+      ["x", ["verso", 5, "x"]],
+      ["y", ["hangline", 5]],
+      ["height", ["point", 1]],
+      ["length", ["column_width", 3]],
+      ["fill", "#222"],
+    ],
 
-    ...grid.recto_columns()
-      .map((e, i) =>
-        ["TextFrame",
-          ["text", "Y --- " + e.y.value.toFixed(1) + " " + e.y.unit],
-          ["x", ["recto", i, "x"]],
-          ["y", [e.y.unit, e.y.value * (14 - (i))]],
-          ["height", ["em", 3]],
-          ["length", ["column_width", 1]],
-          ["rect", false],
-          //...style.label
-        ]
-      ),
+    ["Rect",
+      ["x", ["recto", 0, "x"]],
+      ["y", ["hangline", 1]],
+      ["height", ["point", 1]],
+      ["length", ["column_width", 4]],
+      ["fill", "#222"],
+    ],
+
+    ["Header",
+      ["text", "To grid or not to grid?"],
+      ["x", ["recto", 0, "x"]],
+      ["y", ["hangline", 1]],
+      ["height", ["em", 18]],
+      ["length", ["column_width", 4]],
+      ["rect", true],
+    ],
+
+    ["LinkedFrame",
+      `The grid is just one example of a system that makes a space addressable in another form. Software acts akin to a grid, where programs make legible memory addresses on the computer. A program will make addressable memory which can be processed and made sense of depending on the programs logics. Depending on how a grid is laid out and interacted with different processes are able to emerge from it. A grid is made one way, but it can as easily be made another way.`,
+      [
+        ["x", ["recto", 3, "x"]],
+        ["y", ["hangline", 1]],
+        ["height", ["em", 8]],
+        ["length", ["column_width", 4]],
+        ["rect", false],
+        ...style.body
+      ],
+
+      [
+        ["x", ["recto", 3, "x"]],
+        ["y", ["hangline", 5]],
+        ["height", ["em", 18]],
+        ["length", ["column_width", 4]],
+        ["rect", false],
+        ...style.body,
+        ["font_weight", 600]
+      ]
+
+    ],
 
   ]
 }
