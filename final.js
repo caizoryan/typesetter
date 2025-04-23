@@ -14,6 +14,11 @@ const GlobalStyle = `
   }
 
   @font-face {
+    font-family: "OracleTriple";
+    src: url("/fs/fonts/OracleTriple.ttf");
+  }
+
+  @font-face {
     font-family: "GapSans";
     src: url("/fs/fonts/GapSans.ttf");
   }
@@ -656,7 +661,7 @@ class Book {
       pairedup.push(pairskiplast(i))
     }
 
-
+    console.log(pairedup)
     return pairedup
   }
 
@@ -1079,7 +1084,7 @@ oninit.push(() => {
 /**@type {Book}*/
 let book
 let page = 1
-let offsets = [6]
+let offsets = [6, 15]
 let offset_direction = -1
 
 oninit.push(() => {
@@ -1170,10 +1175,11 @@ let style = {
   ],
 
   label: [
-    ["font_family", "GapSansBold"],
+    ["font_family", "OracleTriple"],
     ["font_size", ["point", 18]],
+    ["font_weight", 600],
     ["leading", ["point", 12]],
-    ["color", "#ff00ff"],
+    ["color", "#00000066"],
   ]
 }
 
@@ -1218,21 +1224,49 @@ let graphicprocesses = [
     ["text", "Language of Graphic Processes"],
     ["x", ["recto", 3, "x"]],
     ["y", ["hangline", 1]],
-    ["height", ["em", 8]],
+    ["height", ["em", 18]],
     ["length", ["column_width", 5]],
     ["rect", false],
   ],
 
   // Translucent Rect
-  ...Array(12).fill(0).map((e, index) => {
+  ...Array(22).fill(0).map((e, index) => {
     return ["Rect",
       ["x", ["recto", 2, "x"]],
-      ["y", ["hangline", 1 + index / 10]],
-      ["height", ["em", 1]],
+      ["y", ["hangline", 1 + index / 15]],
+      ["height", ["em", .5]],
+      ["length", ["em", 9]],
+      ["fill", "#ff00ff88"],
+    ]
+  }),
+  //
+  ...Array(22).fill(0).map((e, index) => {
+    return ["Rect",
+      ["x", ["recto", 2, "x"]],
+      ["y", ["hangline", 3 + index / 10]],
+      ["height", ["em", .5]],
       ["length", ["em", 9]],
       ["fill", "#ffffff88"],
     ]
   }),
+
+  ["Rect",
+    ["x", ["recto", 2, "x"]],
+    ["y", ["recto", 1.5, "y"]],
+    ["height", ["em", 12]],
+    ["length", ["em", 6]],
+    ["fill", "#22222222"],
+  ],
+
+  ["TextFrame",
+    ["text", "as {language}"],
+    ["x", ["recto", 3, "x"]],
+    ["y", ["recto", 0, "y"]],
+    ["height", ["em", 8]],
+    ["length", ["column_width", 3.5]],
+    ["rect", false],
+    ...style.label,
+  ],
 
   ["LinkedFrame",
     graphic_processes_first,
@@ -1240,11 +1274,10 @@ let graphicprocesses = [
       ["x", ["recto", 0, "x"]],
       ["y", ["hangline", 1]],
       ["length", ["column_width", 4]],
-      ["height", ["em", 20]],
+      ["height", ["em", 8]],
       ...style.body
     ],
     [
-      ["x", ["recto", 4, "x"]],
       ["y", ["hangline", 5]],
       ["length", ["column_width", 4]],
     ]
@@ -1252,7 +1285,7 @@ let graphicprocesses = [
 ]
 
 
-let writing_structure = {
+let structure_graphic = {
   title: "",
   content: [
     ["Header",
@@ -1327,11 +1360,30 @@ let writing_structure = {
   ]
 }
 
-
 let finish = `In this above example, the primitive process of drawing text to a pixel position has been chained with a system of typographic vocabulary, or rather a program and its properties have been made addressable through language. This is the crux of what software is, an organization of memory that serves a purpose. If a graphic language has been employed to create Adobe software, it is one instance of that and, a constrained one at that. More so, it is a language that seeks to overwrite all other forms of languages through its predatory monopolistic practices.
 My point in framing graphic processes as language has been to show that programs are malleable, the message and medium of programs is malleability. The ones we use today are made a certain way but can potentially be made another way. 
-Development of another monolithic software suite however is only going to recreate the same rigidity already existing in the Adobe suite. I am instead proposing, we start by looking at programs for what they are — a set of graphic process organized by a certain vocabulary that provides a context and affordances. And then we might be able to envision an alternative that doesn’t seek to be one stop solution for all graphic production requirements, but rather a workflow that can interop with other workflows, programs and processes. 
-For instance, InDesign works differently to Photoshop since they have different goals, however if I would like to use the concept of linked text frames that overflow from one to the other, it wouldn’t be possible to do that in Photoshop. On the other hand, if I was to work in a graphic environment that leveraged interoperability amongst processes, I could take raster tooling and operate on typographic representation of some typeset text using linked frames.`
+Development of another monolithic software suite however is only going to recreate the same rigidity already existing in the Adobe suite. I am instead proposing, we start by looking at programs for what they are — a set of graphic process organized by a certain vocabulary that provides a context and affordances. And then we might be able to envision an alternative that doesn’t seek to be one stop solution for all graphic production requirements, but rather a workflow that can interop with other workflows, programs and processes.`
+
+let gridstructure = [
+  ["Header",
+    ["text", "STRUCTURE"],
+    ["x", ["recto", 3, "x"]],
+    ["y", ["hangline", 1]],
+    ["height", ["em", 8]],
+    ["length", ["column_width", 5]],
+    ["rect", false],
+  ],
+
+  ["TextFrame",
+    ["text", "as {grid}"],
+    ["x", ["recto", 3, "x"]],
+    ["y", ["hangline", 3]],
+    ["height", ["em", 8]],
+    ["length", ["column_width", 5]],
+    ["rect", false],
+    ...style.label
+  ],
+]
 
 let finish_graphic_processes = {
   title: "",
@@ -1349,6 +1401,7 @@ let finish_graphic_processes = {
         ["x", ["verso", 4, "x"]],
       ]
     ],
+    ...gridstructure
   ]
 }
 
@@ -1377,7 +1430,7 @@ let empty = {
   content: []
 }
 
-page = 4
+page = 3
 
 // x-----------------------x
 // *Header: Data
@@ -1385,9 +1438,13 @@ page = 4
 let data = {
   contents: [
     cover,
-    writing_structure,
+    structure_graphic,
     finish_graphic_processes,
     actually_finish_graphic_processes,
+    empty,
+    empty,
+    empty,
+    empty,
     empty,
     empty,
     empty,
