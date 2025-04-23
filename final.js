@@ -1570,6 +1570,12 @@ let translationoutro = `Crossing translation thresholds, from physical to digita
 
 let saddle_stich_img
 let saddle_one, saddle_two
+
+let saddle_stich_begin = `A booklet is designed spread by spread in a page layout software. This spread by spread design is then taken and put through an imposition software (or InDesign’s print booklet) that reorders the pages 
+[see above pg. 6 to pg 9 transition]
+to be turned into a form that can be stacked to form a booklet. 
+[see pg. 10] ------ This process translates virtual spreads into a physical booklet abiding order. In attempting to implement this algorithm, I found visible patterns and rules that emerged from the booklet form.`
+
 let translationstart = {
   title: "",
   content: [
@@ -1622,6 +1628,20 @@ let translationstart = {
     }),
 
     ["LinkedFrame",
+      saddle_stich_begin,
+      [
+        ["x", ["recto", 0, "x"]],
+        ["y", ["hangline", 3]],
+        ["length", ["column_width", 4]],
+        ["height", ["em", 14.5]],
+        ...style.body
+      ],
+      [
+        ["x", ["recto", 4, "x"]],
+      ]
+    ],
+
+    ["LinkedFrame",
       translationintro,
       [
         ["x", ["verso", 0, "x"]],
@@ -1638,6 +1658,9 @@ let translationstart = {
   ]
 }
 
+let saddle_patterns = `These patterns only occur when we can assume some truths, such as the booklet goes from left to right, the recto is always odd and verso is always even.
+With that stated, the page underneath a recto page will be the next odd number and for verso it will be the previous even number. This is directly dependent on the reading order being left to right. This understanding along with having access to the final representation of ‘real’ sheets the pages of the spread are going to be printed on, allowed me to implement a view that could simulate offset sheets in the tool, allowing me to design for a non-traditional book form.`
+
 let translationend = {
   title: "",
   content: [
@@ -1645,9 +1668,25 @@ let translationend = {
     ["Image",
       ["src", () => saddle_stich_img],
       ["x", ["verso", 0, "x"]],
-      ["y", ["hangline", 3]],
+      ["y", ["verso", 0, "y"]],
       ["width", ["column_width", 4]],
       ["height", ["em", 14.5]],
+    ],
+
+    ["LinkedFrame",
+      saddle_patterns,
+      [
+        ["x", ["verso", 0, "x"]],
+        ["y", ["hangline", 5]],
+        ["length", ["column_width", 4]],
+        ["height", ["em", 8.5]],
+        ...style.body
+      ],
+      [
+        ["y", ["hangline", 3]],
+        ["x", ["verso", 4, "x"]],
+        ["height", ["em", 14.5]],
+      ]
     ],
 
     ["LinkedFrame",
@@ -1672,7 +1711,7 @@ let empty = {
   content: []
 }
 
-page = 8
+page = 10
 
 // x-----------------------x
 // *Header: Data
