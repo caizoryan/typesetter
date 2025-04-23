@@ -852,6 +852,11 @@ class Paper {
   }
 
   setup(p, s, el) {
+    p.preload = () => {
+      saddle_stich_img = p.loadImage("/fs/fonts/saddle_stitch.png")
+      saddle_one = p.loadImage("/fs/fonts/saddle_one.png")
+      saddle_two = p.loadImage("/fs/fonts/saddle_two.png")
+    }
     p.setup = () => {
       p.createCanvas(this.size.width.px, this.size.height.px);
       el.style.transform = "scale(" + (1 / s.scale) * viewport + ")"
@@ -1208,6 +1213,16 @@ let cover = {
     ],
 
     ["TextFrame",
+      ["text", "as {software}"],
+      ["x", ["recto", 3, "x"]],
+      ["y", ["recto", 0, "y"]],
+      ["height", ["em", 8]],
+      ["length", ["column_width", 3.5]],
+      ["rect", false],
+      ...style.label,
+    ],
+
+    ["TextFrame",
       ["text", introduction],
       ["length", ["column_width", 4]],
       ["height", ["em", 18]],
@@ -1225,7 +1240,6 @@ let cover = {
 let structure_writing = `In the following writing I will be focusing on software as that has been my focus over the past semester. The writing is set up in 3 parts enterlacing sections of technical implementations that form the booklet and the tool the booklet was designed in, first I frames a language of graphic processes, then I elaborate on that by showing language changes and is not altered when crossing material thresholds (virtual and physical) and concluding with software implementation as a form of interpretive note-taking.`
 let graphic_processes_first = `Graphic software such as Photoshop or InDesign function by taking a vocabulary of primitive graphic processes (such as drawing pixels to canvas, text rendering, blend modes) and chaining them to form ‘tools’ in a context (‘documents’). These processes do not exist solely in Adobe tools and definitely do not belong to them. 
 Graphic processes are abstract processes that can be made sense of by creating a system of relations.`
-let for_instance = `For instance, rendering text on the screen itself has no value other than being able to see the text on a screen. However consider the drawing of text starting at a fixed point and stoping at another fixed point and then continuing at a calculated position — this can be considered a basic typesetting program. The text stops drawing at the line length. Next position is calculated using the value of leading or line length. `
 
 let graphicprocesses = [
   ["Header",
@@ -1383,7 +1397,6 @@ Development of another monolithic software suite however is only going to recrea
 
 let grid_label = `[Elements on these spreads are positioned and sized according to columns and hanglines]`
 let grid_intro = `The typographic grid is a tool that sections out space, so that it can be made legible to a system. Working in an explicit environment where interaction with the composition happens declaratively (rather than moving stuff with a mouse), the grid renders pixel values legible and meaningful. In other words, the grid provides an easier and more meaningful access to the space.`
-let grid_text = `The typographic grid is one example of a system that makes a space addressable in another form. Programs act as grids, where programs make legible memory addresses on the computer. A program will make memory addressable, which can be processed and made sense of depending on the programs logics. Depending on how a grid is laid out and interacted with different processes are able to emerge from it. A grid is made one way, but it can as easily be made another way.`
 
 let gridstructure = [
   ["Header",
@@ -1417,7 +1430,7 @@ let gridstructure = [
   ["TextFrame",
     ["text", "as {grid}"],
     ["x", ["recto", 3, "x"]],
-    ["y", ["hangline", 3]],
+    ["y", ["hangline", 3.3]],
     ["height", ["em", 8]],
     ["length", ["column_width", 5]],
     ["rect", false],
@@ -1438,7 +1451,7 @@ let gridstructure = [
 
   ["Rect",
     ["x", ["recto", 0, "x"]],
-    ["y", ["hangline", 3]],
+    ["y", ["hangline", 3.3]],
     ["height", ["em", 4]],
     ["length", ["column_width", 3]],
     ["fill", "blue"]
@@ -1447,7 +1460,7 @@ let gridstructure = [
   ["TextFrame",
     ["text", grid_label],
     ["x", ["recto", 0, "x"]],
-    ["y", ["hangline", 3]],
+    ["y", ["hangline", 3.3]],
     ["height", ["em", 8]],
     ["length", ["column_width", 3]],
     ["rect", false],
@@ -1457,10 +1470,10 @@ let gridstructure = [
   ],
 ]
 
-let finish_graphic_processes = {
+let grid_text = `The typographic grid is one example of a system that makes a space addressable in another form. Programs act as grids, where programs make legible memory addresses on the computer. A program will make memory addressable, which can be processed and made sense of depending on the programs logics. Depending on how a grid is laid out and interacted with different processes are able to emerge from it. A grid is made one way, but it can as easily be made another way.`
+let graphic_processes = {
   title: "",
   content: [
-
 
     ["LinkedFrame",
       finish,
@@ -1479,30 +1492,61 @@ let finish_graphic_processes = {
   ]
 }
 
-let actually_finish_graphic_processes = {
+let for_instance = `For instance, rendering text on the screen itself has no value other than being able to see the text on a screen. However consider the drawing of text starting at a fixed point and stoping at another fixed point and then continuing at a calculated position — this can be considered a basic typesetting program. The text stops drawing at the line length. Next position is calculated using the value of leading or line length. `
+let above_example = `In this above example, the primitive process of drawing text to a pixel position has been chained with a system of typographic vocabulary, or rather a program and its properties have been made addressable through language. This is the crux of what software is, an organization of memory that serves a purpose. If a graphic language has been employed to create Adobe software, it is one instance of that and, a constrained one at that. More so, it is a language that seeks to overwrite all other forms of languages through its predatory monopolistic practices.`
+let instance_example = {
   title: "",
   content: [
 
-    ...grid.hanglines()
+    ["Image",
+      ["src", () => saddle_one],
+      ["x", ["verso", 0, "x"]],
+      ["y", ["hangline", 0]],
+      ["width", ["column_width", 8]],
+      ["height", ["em", 4.5]],
+    ],
+
+    ...grid.recto_columns()
       .map((e, i) =>
         ["TextFrame",
-          ["text", "[HANGLINE]  "
-            + e.value.toFixed(1)
-            + " "
-            + e.unit
-            + ", "
-            + e.px.toFixed(1)
-            + " px"],
-          ["x", ["verso", 4, "x"]],
-          ["y", [e.unit, e.value]],
-          ["height", ["em", 1]],
-          ["length", ["column_width", 4]],
+          ["text", "[" + (i + 1) + "]" +
+            + e.x.value.toFixed(1)
+            + " " + e.x.unit],
+          ["x", ["verso", i, "x"]],
+          ["y", [e.y.unit, e.y.value]],
+          ["height", ["em", 3]],
+          ["length", ["column_width", 1]],
           ["rect", false],
           ...style.metadata
         ]
       ),
+
+
+    ["TextFrame",
+      ["text", grid_text],
+      ["x", ["verso", 0, "x"]],
+      ["y", ["hangline", 5]],
+      ["height", ["em", 8]],
+      ["length", ["column_width", 8]],
+      ["rect", false],
+      ...style.body
+    ],
     ["LinkedFrame",
       for_instance,
+      [
+        ["x", ["recto", 0, "x"]],
+        ["y", ["recto", 0, "y"]],
+        ["length", ["column_width", 4]],
+        ["height", ["em", 8.5]],
+        ...style.body
+      ],
+      [
+        ["x", ["recto", 4, "x"]],
+      ]
+    ],
+
+    ["LinkedFrame",
+      above_example,
       [
         ["x", ["recto", 0, "x"]],
         ["y", ["hangline", 5]],
@@ -1512,6 +1556,72 @@ let actually_finish_graphic_processes = {
       ],
       [
         ["x", ["recto", 4, "x"]],
+        ["height", ["em", 10.5]],
+        ["length", ["column_width", 4.1]],
+      ]
+    ],
+  ]
+}
+
+let translationintro = `I have been specifically talking about a language of digital, although it is critical to note, this language is a borrowed language. Grids existed before computers were invented, so did leading, page numbers, units. These concepts were translated across the threshold of the physical into a digital implementation. 
+Translation, does not mean making the same concept expressible through another language, rather it is creating a *new* counterpart that can be expressed in another language. We do not work through tools or communicate through languages, we work in them, bounded and constrained within the affordances provided to us by them.
+`
+let translationoutro = `Crossing translation thresholds, from physical to digital, to implement a book, a grid, a paragraph or any such concept requires labour which produces something new, the implemented artifact but also an altered understanding of what has been translated.`
+
+let saddle_stich_img
+let saddle_one, saddle_two
+let translationstart = {
+  title: "",
+  content: [
+
+    ["Image",
+      ["src", () => saddle_two],
+      ["x", ["recto", 0, "x"]],
+      ["y", ["hangline", 0]],
+      ["width", ["column_width", 8]],
+      ["height", ["em", 4.5]],
+    ],
+
+    ["LinkedFrame",
+      translationintro,
+      [
+        ["x", ["verso", 0, "x"]],
+        ["y", ["hangline", 3]],
+        ["length", ["column_width", 4]],
+        ["height", ["em", 14.5]],
+        ...style.body
+      ],
+      [
+        ["x", ["verso", 4, "x"]],
+      ]
+    ],
+
+  ]
+}
+
+let translationend = {
+  title: "",
+  content: [
+
+    ["Image",
+      ["src", () => saddle_stich_img],
+      ["x", ["verso", 0, "x"]],
+      ["y", ["hangline", 3]],
+      ["width", ["column_width", 4]],
+      ["height", ["em", 14.5]],
+    ],
+
+    ["LinkedFrame",
+      translationoutro,
+      [
+        ["x", ["recto", 0, "x"]],
+        ["y", ["hangline", 5]],
+        ["length", ["column_width", 4]],
+        ["height", ["em", 8.5]],
+        ...style.body
+      ],
+      [
+        ["x", ["verso", 4, "x"]],
       ]
     ],
   ]
@@ -1523,7 +1633,7 @@ let empty = {
   content: []
 }
 
-page = 4
+page = 8
 
 // x-----------------------x
 // *Header: Data
@@ -1532,10 +1642,10 @@ let data = {
   contents: [
     cover,
     structure_graphic,
-    finish_graphic_processes,
-    actually_finish_graphic_processes,
-    empty,
-    empty,
+    graphic_processes,
+    instance_example,
+    translationstart,
+    translationend,
     empty,
     empty,
     empty,
@@ -1676,12 +1786,29 @@ function spread_from_block(block, extensions = []) {
     if (item[0] == "TextFrame") return process_textframe(item.slice(1))
     if (item[0] == "LinkedFrame") return process_linked(item.slice(1))
     if (item[0] == "Rect") return rect(reduceprops(item.slice(1)))
+    if (item[0] == "Image") return image(reduceprops(item.slice(1)))
     if (item[0] == "Circle") return circle(reduceprops(item.slice(1)))
     if (item[0] == "Arc") return arc(reduceprops(item.slice(1)))
   })
 
 
   return new Spread(grid, s, [...contents, ...extensions])
+}
+
+
+const image = ({ src, x, y, width, height }) => {
+  return {
+    draw: (p, props) => {
+
+      if (typeof x == "function") x = x(props.structure)
+      if (typeof y == "function") y = y(props.structure)
+      if (typeof width == "function") width = width(props.structure)
+      if (typeof height == "function") height = height(props.structure)
+      p.blendMode("multiply")
+      p.image(src(), x.px, y.px, width.px, height.px)
+      p.blendMode("blend")
+    }
+  }
 }
 
 const rect = ({ x, y, length, height, fill, stroke, strokeWeight }) => {
