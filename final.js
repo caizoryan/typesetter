@@ -854,6 +854,9 @@ class Paper {
   setup(p, s, el) {
     p.preload = () => {
       saddle_stich_img = p.loadImage("/fs/fonts/saddle_stitch.png")
+      front_img = p.loadImage("/fs/fonts/front.png")
+      introduction_img = p.loadImage("/fs/fonts/introduction.png")
+      translation_img = p.loadImage("/fs/fonts/translation.png")
       saddle_one = p.loadImage("/fs/fonts/saddle_one.png")
       saddle_two = p.loadImage("/fs/fonts/saddle_two.png")
     }
@@ -1315,7 +1318,6 @@ let graphicprocesses = [
   ],
 ]
 
-
 let structure_graphic = {
   title: "",
   content: [
@@ -1569,6 +1571,7 @@ Translation, does not mean making the same concept expressible through another l
 let translationoutro = `Crossing translation thresholds, from physical to digital, to implement a book, a grid, a paragraph or any such concept requires labour which produces something new, the implemented artifact but also an altered understanding of what has been translated.`
 
 let saddle_stich_img
+let front_img, introduction_img, translation_img
 let saddle_one, saddle_two
 
 let saddle_stich_begin = `A booklet is designed spread by spread in a page layout software. This spread by spread design is then taken and put through an imposition software (or InDesign’s print booklet) that reorders the pages 
@@ -1664,7 +1667,6 @@ With that stated, the page underneath a recto page will be the next odd number a
 let translationend = {
   title: "",
   content: [
-
     ["Image",
       ["src", () => saddle_stich_img],
       ["x", ["verso", 0, "x"]],
@@ -1705,13 +1707,97 @@ let translationend = {
   ]
 }
 
+let front_cover_img = {
+  title: "",
+  content: [
+    ["Image",
+      ["src", () => front_img],
+      ["x", ["verso", 0, "x"]],
+      ["y", ["verso", 0, "y"]],
+      ["width", ["column_width", 6]],
+      ["height", ["em", 25]],
+    ],
+
+  ]
+}
+
+let intoduction_cover_img = {
+  title: "",
+  content: [
+    ["Image",
+      ["src", () => introduction_img],
+      ["x", ["verso", 0, "x"]],
+      ["y", ["verso", 0, "y"]],
+      ["width", ["column_width", 10]],
+      ["height", ["em", 25]],
+    ],
+  ]
+}
+
+let translation_cover_img = {
+  title: "",
+  content: [
+    ["Image",
+      ["src", () => translation_img],
+      ["x", ["verso", 3, "x"]],
+      ["y", ["verso", 0, "y"]],
+      ["width", ["column_width", 10]],
+      ["height", ["em", 25]],
+    ],
+  ]
+}
+
+let colophon = {
+  title: "",
+  content: [
+
+    ["TextFrame",
+      ["text", `COLOPHON`],
+      ["x", ["verso", 0, "x"]],
+      ["y", ["hangline", 1]],
+      ["length", ["column_width", 3]],
+      ["height", ["em", 25]],
+      ...style.metadata,
+      ["font_weight", 600],
+      ["font_size", ["point", 18]],
+    ],
+    ["TextFrame",
+      ["text", `This booklet was typeset using ABC Dinamo's Oracle Family and GapSans designed by GrandChaos9000. GapSans is a fork of Sani Trixie Sans Typeface.
+
+
+The booklet was designed in a custom tool developed for an independent study conducted for reasons noted in the contents of the booklet. The tool was written in vanilla javascript.
+`],
+      ["x", ["verso", 3, "x"]],
+      ["y", ["hangline", 1]],
+      ["length", ["column_width", 5]],
+      ["height", ["em", 25]],
+      ...style.body
+    ],
+  ]
+}
+
+let blankpages = {
+  title: "",
+  content: [
+
+    ["TextFrame",
+      ["text", `[GOTTA PRINT BLANK PAGES]`],
+      ["x", ["verso", 3, "x"]],
+      ["y", ["hangline", 1]],
+      ["length", ["column_width", 5]],
+      ["height", ["em", 25]],
+      ...style.metadata
+    ],
+  ]
+}
+
 
 let empty = {
   title: "describes grid",
   content: []
 }
 
-page = 10
+page = 21
 
 // x-----------------------x
 // *Header: Data
@@ -1725,11 +1811,11 @@ let data = {
     translationstart,
     translationend,
     empty,
-    empty,
-    empty,
-    empty,
-    empty,
-    empty,
+    front_cover_img,
+    intoduction_cover_img,
+    translation_cover_img,
+    colophon,
+    blankpages,
     empty,
   ]
 }
