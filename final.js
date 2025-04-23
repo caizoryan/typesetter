@@ -1706,6 +1706,128 @@ let translationend = {
   ]
 }
 
+
+let writing_program = ` The process of writing a program that can typeset, compose spreads and impose them for printing, I have grown to understand the form of the book from a different perspective. While I knew how these processes worked before deconstructing and reconstructing them (translation) has given me an alternate vantage point that allows me to see a gestalt of parts coming together. How words, lines, hyphenations, paragraphs and spreads come together. The writing of programs has been akin to note-taking in the sense note-taking to understand.`
+let writing_gui = `Writing as an alternate form to using a GUI to interact with a composition has created a working context where there is a friction in adding things to the page, and/or moving things around. The movement of elements happens along constrained rhythms defined by the grid. The friction makes each action more pronounced. Moreover it produces a distance between the work and the process where actions can be seen from 2 steps back, the decision, it’s interpretation in the constructed system, and the result. 
+Writing as opposed to using the GUI also makes use of language, and a language I can produce at that. The language used in the making and using of the program is borrowed from the typographic vocabulary. However each term has been implemented in a certain way for certain purposes. This is a form of interpretation of these terms and an effort to create relationships with this vocabulary. This interpretive process reveals a generative quality of interpretations. Having interpreted these terms (or created) has impacted how the terms are used in the design process and if they were differently interpreted the process would be significantly altered.
+`
+
+let programmingnotetakng = {
+  title: "",
+  content: [
+
+    ["Header",
+      ["text", "PROGRAMMING"],
+      ["x", ["verso", 3, "x"]],
+      ["y", ["hangline", 1]],
+      ["height", ["em", 18]],
+      ["length", ["column_width", 8]],
+      ["rect", false],
+    ],
+
+    ["Header",
+      ["text", "NOTETAKING"],
+      ["x", ["recto", 3, "x"]],
+      ["y", ["hangline", 5]],
+      ["height", ["em", 18]],
+      ["length", ["column_width", 8]],
+      ["rect", false],
+    ],
+
+    // Translucent Rect
+    ...Array(88).fill(0).map((e, index) => {
+      return ["Rect",
+        ["x", ["recto", 3, "x"]],
+        ["y", ["hangline", 1 + index / 15]],
+        ["height", ["em", .5]],
+        ["length", ["em", 9]],
+        ["fill", "#ff00ff88"],
+      ]
+    }),
+    //
+    ...Array(22).fill(0).map((e, index) => {
+      return ["Rect",
+        ["x", ["verso", 2, "x"]],
+        ["y", ["hangline", 3 + index / 10]],
+        ["height", ["em", .5]],
+        ["length", ["em", 9]],
+        ["fill", "#ffffff88"],
+      ]
+    }),
+
+    ["LinkedFrame",
+      writing_program,
+      [
+        ["x", ["verso", 0, "x"]],
+        ["y", ["hangline", 3]],
+        ["length", ["column_width", 4]],
+        ["height", ["em", 14.5]],
+        ...style.body
+      ],
+      [
+        ["x", ["verso", 4, "x"]],
+      ]
+    ],
+
+    ["TextFrame",
+      ["text", "&"],
+      ["color", "#ff00ff"],
+      ["font_family", "GapSans"],
+      ["x", ["verso", 7, "x"]],
+      ["y", ["hangline", 3]],
+      ["length", ["column_width", 4]],
+      ["height", ["em", 12.5]],
+      ["font_size", ["em", 8]]
+    ],
+
+    ["LinkedFrame",
+      writing_gui,
+      [
+        ["x", ["recto", 0, "x"]],
+        ["y", ["hangline", 5]],
+        ["length", ["column_width", 4]],
+        ["height", ["em", 8.5]],
+        ...style.body
+      ],
+      [
+        ["x", ["recto", 4, "x"]],
+        ["y", ["recto", 0, "y"]],
+        ["height", ["em", 18.5]],
+      ]
+    ],
+
+  ]
+}
+
+
+let frame = `["Header",
+  ["text", "NOTES"],
+  ["x", ["recto", 3, "x"]],
+  ["y", ["hangline", 0]],
+  ["height", ["em", 18]],
+  ["length", ["column_width", 8]],
+  ["rect", false],
+],
+
+["Image",
+  ["src", () => front_img],
+  ["x", ["verso", 0, "x"]],
+  ["y", ["verso", 0, "y"]],
+  ["width", ["column_width", 6]],
+  ["height", ["em", 25]],
+],
+
+["TextFrame",
+  ["text", frame],
+  ["color", "#ff00ff"],
+  ["x", ["recto", 4, "x"]],
+  ["y", ["hangline", 0]],
+  ["length", ["column_width", 8]],
+  ["height", ["em", 22.5]],
+  ...style.metadata
+]
+`
+
 let front_cover_img = {
   title: "",
   content: [
@@ -1716,6 +1838,26 @@ let front_cover_img = {
       ["width", ["column_width", 6]],
       ["height", ["em", 25]],
     ],
+
+    ["Header",
+      ["text", "NOTES"],
+      ["x", ["recto", 3, "x"]],
+      ["y", ["hangline", 0]],
+      ["height", ["em", 18]],
+      ["length", ["column_width", 8]],
+      ["rect", false],
+    ],
+
+    ["TextFrame",
+      ["text", frame],
+      ["color", "#ff00ff"],
+      ["x", ["recto", 4, "x"]],
+      ["y", ["hangline", 0]],
+      ["length", ["column_width", 8]],
+      ["height", ["em", 22.5]],
+      ...style.metadata,
+      ["leading", ["point", 5]],
+    ]
 
   ]
 }
@@ -1749,7 +1891,6 @@ let translation_cover_img = {
 let colophon = {
   title: "",
   content: [
-
     ["TextFrame",
       ["text", `COLOPHON`],
       ["x", ["verso", 0, "x"]],
@@ -1762,8 +1903,6 @@ let colophon = {
     ],
     ["TextFrame",
       ["text", `This booklet was typeset using ABC Dinamo's Oracle Family and GapSans designed by GrandChaos9000. GapSans is a fork of Sani Trixie Sans Typeface.
-
-
 The booklet was designed in a custom tool developed for an independent study conducted for reasons noted in the contents of the booklet. The tool was written in vanilla javascript.
 `],
       ["x", ["verso", 3, "x"]],
@@ -1796,7 +1935,7 @@ let empty = {
   content: []
 }
 
-page = 21
+page = 15
 
 // x-----------------------x
 // *Header: Data
@@ -1809,7 +1948,7 @@ let data = {
     instance_example,
     translationstart,
     translationend,
-    empty,
+    programmingnotetakng,
     front_cover_img,
     intoduction_cover_img,
     translation_cover_img,
