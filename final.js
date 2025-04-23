@@ -5,7 +5,6 @@ import { Q5 as p5 } from "/lib/q5/q5.js"
 const isOdd = num => num % 2 == 1;
 let dpi = 150
 let viewport = .93
-let mx = 0, my = 0
 
 const GlobalStyle = `
   @font-face {
