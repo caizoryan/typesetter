@@ -634,6 +634,7 @@ class Book {
   saddle_pages() {
     // get pages
     let pages = this.pages()
+
     //let pages = [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10, 11], [12, 13], [14, 15], [16, 17]]
     if (!Array.isArray(pages)) return
 
@@ -652,15 +653,14 @@ class Book {
       pair(i)[0] = f_verso
     }
 
-
     let pairedup = []
 
+    // pair spreads up with each other
     for (let i = 0; i < middle; i++) {
       pairedup.push(pages[i])
       pairedup.push(pairskiplast(i))
     }
 
-    console.log(pairedup)
     return pairedup
   }
 
@@ -1828,6 +1828,37 @@ let frame = `["Header",
 ]
 `
 
+let saddle_pages = `saddle_pages() {
+    // get pages
+    let pages = this.pages()
+
+    let last = pages.length - 1
+    let pair = (i) => pages[last - i]
+    let pairskiplast = (i) => pages[last - i - 1]
+
+    let middle = Math.ceil(last / 2)
+
+    // switch each recto with pair spread recto till middle
+    for (let i = 0; i < middle; i++) {
+      let f_verso = pages[i][0]
+      let p_verso = pair(i)[0]
+
+      pages[i][0] = p_verso
+      pair(i)[0] = f_verso
+    }
+
+    let pairedup = []
+
+    // pair spreads up with each other
+    for (let i = 0; i < middle; i++) {
+      pairedup.push(pages[i])
+      pairedup.push(pairskiplast(i))
+    }
+
+    return pairedup
+  }
+`
+
 let front_cover_img = {
   title: "",
   content: [
@@ -1862,16 +1893,63 @@ let front_cover_img = {
   ]
 }
 
+let saddle_instructions = `A series of spreads are input. The total pages must be a multiple of 4. The verso of first and recto of last spread are nullified (page next to front and back). Each spread exchanges its recto with its pair. Pairs are found by counting the index position from the back of list. Once each recto is switched, the spreads are then paired up, using the same pairing logic.`
+
 let intoduction_cover_img = {
   title: "",
   content: [
     ["Image",
-      ["src", () => introduction_img],
+      ["src", () => front_img],
       ["x", ["verso", 0, "x"]],
       ["y", ["verso", 0, "y"]],
-      ["width", ["column_width", 10]],
+      ["width", ["column_width", 6]],
       ["height", ["em", 25]],
     ],
+
+    ["Header",
+      ["text", "booklet_bind()"],
+      ["x", ["recto", 3, "x"]],
+      ["y", ["hangline", 5]],
+      ["height", ["em", 18]],
+      ["length", ["column_width", 8]],
+      ["rect", false],
+    ],
+
+    // Translucent Rect
+    ...Array(58).fill(0).map((e, index) => {
+      return ["Rect",
+        ["x", ["recto", 2, "x"]],
+        ["y", ["hangline", 3 + index / 15]],
+        ["height", ["em", .5]],
+        ["length", ["em", 9]],
+        ["fill", "#0000ff22"],
+      ]
+    }),
+
+    ["LinkedFrame",
+      saddle_instructions,
+      [
+        ["color", "#ff00ff"],
+        ["x", ["recto", 0, "x"]],
+        ["y", ["hangline", 1]],
+        ["length", ["column_width", 4]],
+        ["height", ["em", 22.5]],
+        ...style.body,
+      ]
+    ],
+
+    ["LinkedFrame",
+      saddle_pages,
+      [
+        ["color", "#ff00ff"],
+        ["x", ["recto", 4, "x"]],
+        ["y", ["hangline", 1]],
+        ["length", ["column_width", 8]],
+        ["height", ["em", 22.5]],
+        ...style.metadata,
+        ["leading", ["point", 5]],
+      ]],
+
   ]
 }
 
@@ -1935,7 +2013,7 @@ let empty = {
   content: []
 }
 
-page = 15
+page = 17
 
 // x-----------------------x
 // *Header: Data
