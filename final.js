@@ -1174,6 +1174,14 @@ let style = {
     ["color", "black"],
   ],
 
+  metadata: [
+    ["font_family", "OracleTriple"],
+    ["font_size", ["point", 7]],
+    ["font_weight", 300],
+    ["leading", ["point", 12]],
+    ["color", "#ff00ff"],
+  ],
+
   label: [
     ["font_family", "OracleTriple"],
     ["font_size", ["point", 18]],
@@ -1192,9 +1200,9 @@ let cover = {
   title: "",
   content: [
     ["Header",
-      ["text", "INTRODUCTION"],
+      ["text", "BOOKLET"],
       ["height", ["em", 12]],
-      ["x", ["recto", 0, "x"]],
+      ["x", ["recto", 3, "x"]],
       ["y", ["hangline", 3]],
       //["color", "#0000ffaa"]
     ],
@@ -1250,6 +1258,15 @@ let graphicprocesses = [
     ]
   }),
 
+  ...Array(12).fill(0).map((e, index) => {
+    return ["Circle",
+      ["x", ["recto", 2 + index / 3, "x"]],
+      ["y", ["hangline", 3]],
+      ["radius", ["em", 6]],
+      ["stroke", "white"]
+    ]
+  }),
+
   ["Rect",
     ["x", ["recto", 2, "x"]],
     ["y", ["recto", 1.5, "y"]],
@@ -1289,7 +1306,7 @@ let structure_graphic = {
   title: "",
   content: [
     ["Header",
-      ["text", "STATE STRUCTURE"],
+      ["text", "INTRODUCTION"],
       ["x", ["verso", 2, "x"]],
       ["y", ["hangline", 0]],
       ["length", ["column_width", 6]],
@@ -1364,6 +1381,10 @@ let finish = `In this above example, the primitive process of drawing text to a 
 My point in framing graphic processes as language has been to show that programs are malleable, the message and medium of programs is malleability. The ones we use today are made a certain way but can potentially be made another way. 
 Development of another monolithic software suite however is only going to recreate the same rigidity already existing in the Adobe suite. I am instead proposing, we start by looking at programs for what they are — a set of graphic process organized by a certain vocabulary that provides a context and affordances. And then we might be able to envision an alternative that doesn’t seek to be one stop solution for all graphic production requirements, but rather a workflow that can interop with other workflows, programs and processes.`
 
+let grid_label = `[Elements on these spreads are positioned and sized according to columns and hanglines]`
+let grid_intro = `The typographic grid is a tool that sections out space, so that it can be made legible to a system. Working in an explicit environment where interaction with the composition happens declaratively (rather than moving stuff with a mouse), the grid renders pixel values legible and meaningful. In other words, the grid provides an easier and more meaningful access to the space.`
+let grid_text = `The typographic grid is one example of a system that makes a space addressable in another form. Programs act as grids, where programs make legible memory addresses on the computer. A program will make memory addressable, which can be processed and made sense of depending on the programs logics. Depending on how a grid is laid out and interacted with different processes are able to emerge from it. A grid is made one way, but it can as easily be made another way.`
+
 let gridstructure = [
   ["Header",
     ["text", "STRUCTURE"],
@@ -1374,6 +1395,25 @@ let gridstructure = [
     ["rect", false],
   ],
 
+  ...grid.hanglines()
+    .map((e, i) =>
+      ["TextFrame",
+        ["text", "[HANGLINE]  "
+          + e.value.toFixed(1)
+          + " "
+          + e.unit
+          + ", "
+          + e.px.toFixed(1)
+          + " px"],
+        ["x", ["recto", 1, "x"]],
+        ["y", [e.unit, e.value]],
+        ["height", ["em", 1]],
+        ["length", ["column_width", 4]],
+        ["rect", false],
+        ...style.metadata
+      ]
+    ),
+
   ["TextFrame",
     ["text", "as {grid}"],
     ["x", ["recto", 3, "x"]],
@@ -1383,11 +1423,45 @@ let gridstructure = [
     ["rect", false],
     ...style.label
   ],
+
+
+  ["TextFrame",
+    ["text", grid_intro],
+    ["x", ["recto", 0, "x"]],
+    ["y", ["hangline", 5]],
+    ["height", ["em", 8]],
+    ["length", ["column_width", 8]],
+    ["rect", false],
+    ...style.body
+  ],
+
+
+  ["Rect",
+    ["x", ["recto", 0, "x"]],
+    ["y", ["hangline", 3]],
+    ["height", ["em", 4]],
+    ["length", ["column_width", 3]],
+    ["fill", "blue"]
+  ],
+
+  ["TextFrame",
+    ["text", grid_label],
+    ["x", ["recto", 0, "x"]],
+    ["y", ["hangline", 3]],
+    ["height", ["em", 8]],
+    ["length", ["column_width", 3]],
+    ["rect", false],
+    ...style.metadata,
+    ["font_weight", 800],
+    ["color", "yellow"]
+  ],
 ]
 
 let finish_graphic_processes = {
   title: "",
   content: [
+
+
     ["LinkedFrame",
       finish,
       [
@@ -1408,6 +1482,25 @@ let finish_graphic_processes = {
 let actually_finish_graphic_processes = {
   title: "",
   content: [
+
+    ...grid.hanglines()
+      .map((e, i) =>
+        ["TextFrame",
+          ["text", "[HANGLINE]  "
+            + e.value.toFixed(1)
+            + " "
+            + e.unit
+            + ", "
+            + e.px.toFixed(1)
+            + " px"],
+          ["x", ["verso", 4, "x"]],
+          ["y", [e.unit, e.value]],
+          ["height", ["em", 1]],
+          ["length", ["column_width", 4]],
+          ["rect", false],
+          ...style.metadata
+        ]
+      ),
     ["LinkedFrame",
       for_instance,
       [
@@ -1430,7 +1523,7 @@ let empty = {
   content: []
 }
 
-page = 3
+page = 4
 
 // x-----------------------x
 // *Header: Data
@@ -2072,24 +2165,6 @@ const decodeHTML = function(str) {
 //   ]),
 //
 //
-// ...grid.hanglines()
-//   .map((e, i) =>
-//     ["TextFrame",
-//       ["text", "hangline --- "
-//         + e.value.toFixed(1)
-//         + " "
-//         + e.unit
-//         + ", "
-//         + e.px.toFixed(1)
-//         + " px"],
-//       ["x", ["verso", 3, "x"]],
-//       ["y", [e.unit, e.value]],
-//       ["height", ["em", 3]],
-//       ["length", ["column_width", 4]],
-//       ["rect", false],
-//       //...style.label
-//     ]
-//   ),
 //
 // ...grid.recto_columns()
 //   .map((e, i) =>
