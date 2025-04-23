@@ -1574,6 +1574,24 @@ let translationstart = {
   title: "",
   content: [
 
+    ["Header",
+      ["text", "TRANSLATION"],
+      ["x", ["verso", 3, "x"]],
+      ["y", ["hangline", 1]],
+      ["height", ["em", 18]],
+      ["length", ["column_width", 8]],
+      ["rect", false],
+    ],
+
+    ["Header",
+      ["text", "BOOKLET"],
+      ["x", ["recto", 3, "x"]],
+      ["y", ["hangline", 5]],
+      ["height", ["em", 18]],
+      ["length", ["column_width", 8]],
+      ["rect", false],
+    ],
+
     ["Image",
       ["src", () => saddle_two],
       ["x", ["recto", 0, "x"]],
@@ -1581,6 +1599,27 @@ let translationstart = {
       ["width", ["column_width", 8]],
       ["height", ["em", 4.5]],
     ],
+
+    // Translucent Rect
+    ...Array(88).fill(0).map((e, index) => {
+      return ["Rect",
+        ["x", ["verso", 3, "x"]],
+        ["y", ["hangline", 1 + index / 15]],
+        ["height", ["em", .5]],
+        ["length", ["em", 9]],
+        ["fill", "#ff00ff88"],
+      ]
+    }),
+    //
+    ...Array(22).fill(0).map((e, index) => {
+      return ["Rect",
+        ["x", ["verso", 2, "x"]],
+        ["y", ["hangline", 3 + index / 10]],
+        ["height", ["em", .5]],
+        ["length", ["em", 9]],
+        ["fill", "#ffffff88"],
+      ]
+    }),
 
     ["LinkedFrame",
       translationintro,
