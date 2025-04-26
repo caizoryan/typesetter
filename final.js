@@ -3,8 +3,8 @@ import { hyphenateSync } from "/lib/hyphenator/hyphenate.js"
 import { Q5 as p5 } from "/lib/q5/q5.js"
 
 const isOdd = num => num % 2 == 1;
-let dpi = 150
-let viewport = .93
+let dpi = 100
+let viewport = .4
 
 const GlobalStyle = `
   @font-face {
@@ -89,6 +89,8 @@ function draw_line(p, text, x, y, length, state, hooks) {
         hyphenChar: "---((---))---"
       }).split("---((---))---")
     }
+
+    console.log(hyphenated)
 
     // try to put first of hyphenated in...
     /**@type {number[]}*/
@@ -580,7 +582,7 @@ class Spread {
 
     p.noFill()
     p.stroke(200, 0, 250)
-    p.strokeWeight(.5)
+    p.strokeWeight(.2)
 
 
 
