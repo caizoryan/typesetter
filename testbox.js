@@ -46,7 +46,7 @@ const GlobalStyle = `
   }
 `
 let funky_hyphens = false
-let color_hyphens = false
+let color_hyphens = true
 
 /**
 @param {string} text
@@ -861,6 +861,7 @@ class Paper {
       saddle_one = p.loadImage("/fs/fonts/saddle_one.png")
       saddle_two = p.loadImage("/fs/fonts/saddle_two.png")
     }
+
     p.setup = () => {
       p.createCanvas(this.size.width.px, this.size.height.px);
       el.style.transform = "scale(" + (1 / s.scale) * viewport + ")"
@@ -2270,7 +2271,6 @@ const graphic = () => {
   }
 }
 
-
 function Header(text, para) {
   text = decodeHTML(text)
   let propies = reduceprops(style.title)
@@ -2289,8 +2289,6 @@ function Header(text, para) {
 
   return drawable
 }
-
-
 
 const decodeHTML = function(str) {
   var map = {
