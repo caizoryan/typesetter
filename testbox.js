@@ -90,7 +90,6 @@ function draw_line(p, text, x, y, length, state, hooks) {
       }).split("---((---))---")
     }
 
-    console.log(hyphenated)
 
     // try to put first of hyphenated in...
     /**@type {number[]}*/
@@ -630,7 +629,8 @@ class Book {
     /**@type Spread[]*/
 
     this.spreads = spreads
-    this.offsets = []
+    this.v_offsets = []
+    this.h_offsets = []
   }
 
   saddle_pages() {
@@ -667,7 +667,7 @@ class Book {
   }
 
   // Will take sheet number, find pages in the sheet and mark it offset
-  mark_sheet_offset(index) {
+  mark_sheet_v_offset(index) {
     if (!this.validate_spread(index)) return
 
     let spreads = this.saddle_pages()
@@ -677,16 +677,37 @@ class Book {
     let pair = spreads[pair_index]
 
     sheet.forEach((e) => {
-      if (this.offsets.findIndex(f => f == e) == -1) { this.offsets.push(e) }
+      if (this.v_offsets.findIndex(f => f == e) == -1) { this.v_offsets.push(e) }
     })
 
     pair.forEach((e) => {
-      if (this.offsets.findIndex(f => f == e) == -1) { this.offsets.push(e) }
+      if (this.v_offsets.findIndex(f => f == e) == -1) { this.v_offsets.push(e) }
+    })
+  }
+
+  mark_sheet_h_offset(index) {
+    if (!this.validate_spread(index)) return
+
+    let spreads = this.saddle_pages()
+
+    let sheet = spreads[index]
+    let pair_index = isOdd(index) ? index - 1 : index + 1
+    let pair = spreads[pair_index]
+
+    sheet.forEach((e) => {
+      if (this.h_offsets.findIndex(f => f == e) == -1) { this.h_offsets.push(e) }
+    })
+
+    pair.forEach((e) => {
+      if (this.h_offsets.findIndex(f => f == e) == -1) { this.h_offsets.push(e) }
     })
   }
 
   // Will take page number and convert to sheet then mark it.
-  mark_page_offset(page) {
+	/**
+		 @param {"h" | "v"} type
+	 */
+  mark_page_offset(page, type) {
     let spread = this.saddle_pages()
     let index = -1
 
@@ -694,7 +715,8 @@ class Book {
       e.forEach(pg => pg == page ? index = i : null)
     })
 
-    this.mark_sheet_offset(index)
+		if (type=="h") this.mark_sheet_h_offset(index)
+		if (type=="v") this.mark_sheet_v_offset(index)
   }
 
   page_to_spread(num) {
@@ -770,24 +792,26 @@ class Book {
   /**
   @typedef {p5.Image} Image
   */
-  verso_image(p, number, color = 255) {
+  verso_image(p, number, color = "white", width = .5) {
     let _p = p.createGraphics(p.width, p.height)
     _p.background(color)
     if (this.grid) this.spreads[number].draw_grid(_p, [(number * 2), (number * 2) + 1])
     this.spreads[number].draw(_p)
     if (number == 0) _p.background(200)
-    let img = _p.get(0, 0, _p.width / 2, _p.height)
+    let img = _p.get(0, 0, _p.width * width, _p.height)
 
     return img
   }
 
-  recto_image(p, number, color = 255) {
+  recto_image(p, number, color = "white", width = .5) {
+		let from = 1-width
+		console.log("width:",width, "from: ", from)
     let _p = p.createGraphics(p.width, p.height)
     _p.background(color)
     if (this.grid) this.spreads[number].draw_grid(_p, [(number * 2), (number * 2) + 1])
     this.spreads[number].draw(_p)
     if (number == this.spreads.length - 1) _p.background(200)
-    let img = _p.get(_p.width / 2, 0, _p.width / 2, _p.height)
+    let img = _p.get(_p.width * from, 0, _p.width * width, _p.height)
 
     return img
   }
@@ -808,20 +832,24 @@ class Book {
     p.image(img, x, y, img.width, img.height)
   }
 
-  page_is_offset(page) {
-    return this.offsets.includes(page)
+  page_is_v_offset(page) {
+    return this.v_offsets.includes(page)
+  }
+
+  page_is_h_offset(page) {
+    return this.h_offsets.includes(page)
   }
 
   draw_verso(p) {
     let page = this.current_spread * 2 - 1
-    let includes = this.page_is_offset(page)
+    let includes = this.page_is_v_offset(page)
     let img = this.verso_image(p, this.current_spread)
     this.draw_img(p, img, 0, 0)
   }
 
   draw_recto(p) {
     let page = this.current_spread * 2
-    let includes = this.page_is_offset(page)
+    let includes = this.page_is_v_offset(page)
     let img = this.recto_image(p, this.current_spread)
     this.draw_img(p, img, img.width, 0)
   }
@@ -891,8 +919,8 @@ class Paper {
 
     let nextvisibleverso = (spread) => {
       let verso_page = spread * 2
-      let verso_offset = book.page_is_offset(verso_page)
-      let offset_pages = book.offsets
+      let verso_offset = book.page_is_v_offset(verso_page)
+      let offset_pages = book.v_offsets
 
       let found = -100
       if (verso_offset) return found
@@ -911,11 +939,10 @@ class Paper {
 
       return found
     }
-
     let nextvisiblerecto = (spread) => {
       let recto_page = spread * 2 + 1
-      let recto_offset = book.page_is_offset(recto_page)
-      let offset_pages = book.offsets
+      let recto_offset = book.page_is_v_offset(recto_page)
+      let offset_pages = book.v_offsets
 
       let found = -200
       if (recto_offset) return found
@@ -934,33 +961,92 @@ class Paper {
       return found
     }
 
+		let before_spine = (page_num) => {
+			let spread = book.pages()
+			let is = undefined
+			let middle = Math.floor(spread.length/2)
+
+			spread.forEach((e, i) => {
+				e.forEach((pg, side) => {
+					if (pg == page_num){
+						if (i == middle) {
+							if (side == 0) is = true
+							else is = false
+						}
+						else {
+							if (i < middle) is= true
+							else is= false
+						}
+					}
+				})
+			})
+
+			return is
+		}
 
     let draw_verso = (graphic, spread, draw_behind = true) => {
       let verso_page = spread * 2
-      let verso_offset = book.page_is_offset(verso_page)
-      let verso_image = book.verso_image(graphic, spread, verso_offset ? "#ABE2F7" : 255)
+      let verso_v_offset = book.page_is_v_offset(verso_page)
+      let verso_h_offset = book.page_is_h_offset(verso_page)
+			let color = verso_v_offset ? "#ABE2F7" : verso_h_offset ? "#FFE2F7" : "white"
+			let width = book.structure?.props.page_width
 
-      if (verso_offset && draw_behind) {
+			let before = before_spine(verso_page)
+
+			console.log(verso_page, "is before: ", before)
+			let op = before ? -1 : 1
+			let new_page_width = book.structure?.props.page_width.px / 2 + (offset_size.px * op)
+			let proportional_width =  new_page_width / width.px 
+      let verso_image = book.verso_image(graphic, spread, color, verso_h_offset ? proportional_width : .5)
+
+      if ((verso_v_offset||verso_h_offset) && draw_behind) {
         draw_verso(graphic, spread - 1)
         p.opacity(.95)
       }
 
-      p.image(verso_image, left, verso_offset ? top + (offset_size.px * offset_direction) : top, verso_image.width, verso_image.height)
+			let x = verso_h_offset ? left + (offset_size.px * (v_offset_direction * op)) : left
+
+      p.image(verso_image, x,
+							verso_v_offset
+								? top + (offset_size.px * v_offset_direction)
+								: top,
+							verso_image.width, verso_image.height)
+
       p.opacity(1)
     }
 
 
     let draw_recto = (graphic, spread, draw_behind = true) => {
       let recto_page = spread * 2 + 1
-      let recto_offset = book.page_is_offset(recto_page)
-      let recto_image = book.recto_image(graphic, spread, recto_offset ? "#ABE2F7" : 255)
+      let recto_v_offset = book.page_is_v_offset(recto_page)
+      let recto_h_offset = book.page_is_h_offset(recto_page)
 
-      if (recto_offset && draw_behind) {
+			let color = recto_v_offset ? "#ABE2F7" : recto_h_offset ? "#FFE2F7" : "white"
+
+			let width = book.structure?.props.page_width
+			let before = before_spine(recto_page)
+			console.log(recto_page, "is before: ", before)
+			let op = before ? -1 : 1
+
+			let new_page_width = book.structure?.props.page_width.px / 2 + (offset_size.px * op)
+			let proportional_width =  new_page_width / width.px 
+
+      let recto_image = book.recto_image(graphic, spread,color, recto_h_offset ? proportional_width : .5)
+
+      if ((recto_v_offset || recto_h_offset) && draw_behind) {
         draw_recto(graphic, spread + 1)
         p.opacity(.8)
       }
 
-      p.image(recto_image, left + width.px / 2, recto_offset ? top + (offset_size.px * offset_direction) : top, recto_image.width, recto_image.height)
+      p.image(
+				recto_image, left + width.px / 2,
+
+				recto_v_offset
+					? top + (offset_size.px * v_offset_direction)
+					: top
+
+				, recto_image.width, recto_image.height)
+
       p.opacity(1)
     }
 
@@ -1094,12 +1180,16 @@ oninit.push(() => {
 /**@type {Book}*/
 let book
 let page = 1
-let offsets = [6, 15]
-let offset_direction = -1
+let v_offsets = [6, 15]
+let v_offset_direction = -1
+
+let h_offsets = [4]
+let h_offset_direction = -1
 
 oninit.push(() => {
   book = new Book(pages)
-  offsets.forEach((e) => book.mark_page_offset(e))
+  v_offsets.forEach((e) => book.mark_page_offset(e, "v"))
+  h_offsets.forEach((e) => book.mark_page_offset(e, "h"))
   book.set_page(page)
 })
 
@@ -1255,36 +1345,6 @@ let graphicprocesses = [
     ["length", ["column_width", 5]],
     ["rect", false],
   ],
-
-  // Translucent Rect
-  ...Array(22).fill(0).map((e, index) => {
-    return ["Rect",
-      ["x", ["recto", 2, "x"]],
-      ["y", ["hangline", 1 + index / 15]],
-      ["height", ["em", .5]],
-      ["length", ["em", 9]],
-      ["fill", "#ff00ff88"],
-    ]
-  }),
-  //
-  ...Array(22).fill(0).map((e, index) => {
-    return ["Rect",
-      ["x", ["recto", 2, "x"]],
-      ["y", ["hangline", 3 + index / 10]],
-      ["height", ["em", .5]],
-      ["length", ["em", 9]],
-      ["fill", "#ffffff88"],
-    ]
-  }),
-
-  ...Array(12).fill(0).map((e, index) => {
-    return ["Circle",
-      ["x", ["recto", 2 + index / 3, "x"]],
-      ["y", ["hangline", 3]],
-      ["radius", ["em", 6]],
-      ["stroke", "white"]
-    ]
-  }),
 
   ["Rect",
     ["x", ["recto", 2, "x"]],
@@ -2016,7 +2076,7 @@ let empty = {
   content: []
 }
 
-page = 17
+page = 2
 
 // x-----------------------x
 // *Header: Data
@@ -2073,7 +2133,6 @@ let process_hangline = (prop) =>
 
     let dist = s.sub(next, value)
     let offset = s.mul(dist, diff)
-    console.log("offset", offset)
 
     return s.add(value, offset)
   }
